@@ -1,0 +1,25 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.env
+.env.*
+.venv/
+venv/
+node_modules/
+.wrangler/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+/dist/
+/build/
+
+# IDE
+.idea/
+
+# QA reports
+qodana*
+*.sarif
+
+# Local screenshots
+ai-ecg-desktop.png
+ai-ecg-mobile.png
