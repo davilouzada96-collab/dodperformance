@@ -16,10 +16,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare public directory
+        run: |
+          mkdir -p public
+          cp index.html public/
+          cp -R ai-ecg-risco-cardioembolico public/
+          cp -R assets public/
+
       - name: Deploy
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: 05ef119cae7ef4dc98ff6f50bb6becc5
-          command: pages deploy . --project-name=dodperformance --branch=main
+          command: pages deploy public --project-name=dodperformance --branch=main
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
