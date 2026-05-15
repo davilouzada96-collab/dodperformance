@@ -52,7 +52,8 @@ body {
   max-width: 920px;
 }
 
-.dod-ai-ecg__eyebrow {
+.dod-ai-ecg__eyebrow,
+.dod-ai-ecg__section-kicker {
   display: inline-block;
   max-width: 100%;
   margin-bottom: 16px;
@@ -312,14 +313,18 @@ body {
   margin-top: 28px;
 }
 
-.dod-ai-ecg__cards article {
-  min-height: 180px;
-  padding: 24px;
+.dod-ai-ecg__cards article,
+.dod-ai-ecg__interpretation-steps li {
   border: 1px solid rgba(185, 215, 232, 0.16);
   border-radius: var(--radius-md);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.065), rgba(255, 255, 255, 0.03));
   backdrop-filter: blur(14px);
+}
+
+.dod-ai-ecg__cards article {
+  min-height: 180px;
+  padding: 24px;
 }
 
 .dod-ai-ecg__card-index {
@@ -342,6 +347,62 @@ body {
   margin: 0;
   color: #b9d7e8;
   line-height: 1.55;
+}
+
+.dod-ai-ecg__interpretation {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 28px;
+  margin-top: 34px;
+  padding: 30px;
+  border: 1px solid rgba(66, 232, 255, 0.22);
+  border-radius: var(--radius-md);
+  background:
+    radial-gradient(circle at 15% 20%, rgba(66, 232, 255, 0.12), transparent 34%),
+    rgba(2, 8, 23, 0.54);
+  box-shadow: inset 0 0 42px rgba(66, 232, 255, 0.045);
+}
+
+.dod-ai-ecg__interpretation h2 {
+  max-width: 560px;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.8rem, 4vw, 3.1rem);
+  line-height: 1.03;
+  letter-spacing: 0;
+}
+
+.dod-ai-ecg__interpretation p {
+  max-width: 640px;
+  margin: 18px 0 0;
+  color: #b9d7e8;
+  font-size: 1.02rem;
+  line-height: 1.68;
+}
+
+.dod-ai-ecg__interpretation-steps {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dod-ai-ecg__interpretation-steps li {
+  padding: 18px;
+}
+
+.dod-ai-ecg__interpretation-steps strong {
+  display: block;
+  margin-bottom: 7px;
+  color: #f4fbff;
+  font-size: 1rem;
+}
+
+.dod-ai-ecg__interpretation-steps span {
+  display: block;
+  color: #b9d7e8;
+  line-height: 1.5;
 }
 
 .dod-ai-ecg__clinical-note {
@@ -431,7 +492,11 @@ body {
     bottom: 24px;
   }
 
-  .dod-ai-ecg__cards { grid-template-columns: 1fr; }
+  .dod-ai-ecg__cards,
+  .dod-ai-ecg__interpretation {
+    grid-template-columns: 1fr;
+  }
+
   .dod-ai-ecg__cards article { min-height: auto; }
 }
 
@@ -441,7 +506,8 @@ body {
     padding: 56px 16px;
   }
 
-  .dod-ai-ecg__eyebrow {
+  .dod-ai-ecg__eyebrow,
+  .dod-ai-ecg__section-kicker {
     font-size: 0.62rem;
     letter-spacing: 0.1em;
   }
@@ -497,7 +563,12 @@ body {
   }
 
   .dod-ai-ecg__cards article,
+  .dod-ai-ecg__interpretation,
   .dod-ai-ecg__clinical-note { padding: 18px; }
+
+  .dod-ai-ecg__interpretation h2 {
+    font-size: 1.75rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
