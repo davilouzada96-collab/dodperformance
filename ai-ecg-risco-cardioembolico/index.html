@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="../assets/css/tokens.css" />
   <link rel="stylesheet" href="../assets/css/layout.css" />
   <link rel="stylesheet" href="../assets/css/components.css" />
-  <link rel="stylesheet" href="../assets/css/pages/ai-ecg.css?v=20260514-ai-visual-2" />
+  <link rel="stylesheet" href="../assets/css/pages/ai-ecg.css?v=20260515-dod-interpretation" />
   <style>
     .dod-ai-ecg__video-scene {
       position: relative;
@@ -300,6 +300,33 @@
             <p>Onda P alargada ou bifásica, associada à estase atrial e maior risco trombótico.</p>
           </article>
         </div>
+
+        <section class="dod-ai-ecg__interpretation" aria-labelledby="dod-interpretation-title">
+          <div>
+            <span class="dod-ai-ecg__section-kicker">Leitura DOD</span>
+            <h2 id="dod-interpretation-title">Como a DOD interpreta esse sinal</h2>
+            <p>
+              O AI-ECG não é tratado como uma resposta isolada, mas como um sinal de priorização.
+              A leitura DOD cruza o padrão elétrico com contexto clínico, histórico, imagem e monitorização,
+              separando ruído de tendência útil para investigação da fonte cardioembólica.
+            </p>
+          </div>
+
+          <ol class="dod-ai-ecg__interpretation-steps" aria-label="Etapas da leitura DOD">
+            <li>
+              <strong>Detectar</strong>
+              <span>Identificar padrões elétricos compatíveis com risco cardioembólico aumentado.</span>
+            </li>
+            <li>
+              <strong>Contextualizar</strong>
+              <span>Relacionar o achado ao quadro clínico, fatores de risco e exames complementares.</span>
+            </li>
+            <li>
+              <strong>Priorizar</strong>
+              <span>Orientar atenção, seguimento e investigação sem substituir decisão médica.</span>
+            </li>
+          </ol>
+        </section>
 
         <aside class="dod-ai-ecg__clinical-note" id="nota-clinica" aria-label="Nota educacional">
           <strong>Nota educacional</strong>
