@@ -1,0 +1,27 @@
+# ==============================================================
+# clinico-gate — configuração do Worker de verificação
+# ==============================================================
+name = "clinico-gate"
+main = "clinico-gate.js"
+compatibility_date = "2026-01-01"
+
+# Rota no SEU domínio — é o que torna a sessão first-party (cookie do site).
+# Ajuste zone_name se o domínio for outro.
+routes = [
+  { pattern = "dodperformance.com.br/api/clinico/*", zone_name = "dodperformance.com.br" }
+]
+
+# Variáveis públicas (não sensíveis). Ajuste o FROM_EMAIL para um endereço do
+# seu domínio verificado no Resend.
+[vars]
+SITE_URL = "https://dodperformance.com.br"
+FROM_EMAIL = "DOD Clínico <acesso@send.dodperformance.com.br>"
+ALLOWED_ORIGIN = "https://dodperformance.com.br"
+TOKEN_TTL_MIN = "15"
+SESSION_TTL_HOURS = "8"
+
+# ------------------------------------------------------------
+# SECRETS (NÃO ficam aqui — você define você mesmo, criptografados):
+#   wrangler secret put RESEND_API_KEY
+#   wrangler secret put SIGNING_SECRET
+# ------------------------------------------------------------
