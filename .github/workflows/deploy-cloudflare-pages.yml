@@ -21,7 +21,7 @@ jobs:
           rm -rf public
           mkdir -p public
           cp index.html public/
-          cp app.js styles.css favicon.svg output_data_1779051008.json public/
+          cp app.js scientific-library-data.js styles.css favicon.svg public/
           cp -R dodperoformance.main public/
 
       - name: Deploy

@@ -1,4 +1,4 @@
-const DATA_URL = "./output_data_1779051008.json";
+import { researchCards as scientificLibraryCards } from "./scientific-library-data.js";
 const OPENALEX_URL = "https://api.openalex.org/works";
 const PUBMED_BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 const PROJECT_STORAGE_KEY = "dodResearchProjects";
@@ -466,6 +466,7 @@ const ptBrConceptCatalog = [
 const state = {
   papers: [],
   query: "",
+  category: "all",
   year: "all",
   sort: "score-desc",
   minCitations: 0,
@@ -520,7 +521,6 @@ const els = {
   fromYearInput: document.querySelector("#fromYearInput"),
   resultLimit: document.querySelector("#resultLimit"),
   searchButton: document.querySelector("#searchButton"),
-  loadLocalButton: document.querySelector("#loadLocalButton"),
   copyStrategyButton: document.querySelector("#copyStrategyButton"),
   exportJsonButton: document.querySelector("#exportJsonButton"),
   exportCsvButton: document.querySelector("#exportCsvButton"),
@@ -870,6 +870,7 @@ function accessLabel(paper) {
 }
 
 function cardCode(paper) {
+  if (paper.cardCode) return paper.cardCode;
   const evidenceCode = {
     guideline: "DIR",
     "systematic-review": "REV",
@@ -928,20 +929,34 @@ function enrichPaper(paper) {
   return normalized;
 }
 
-function normalizeLocalPaper(paper) {
+function normalizeCuratedCard(card, libraryOrder) {
+  const pmid = card.source.match(/pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)/)?.[1] || "";
+  const doi = (card.source.match(/doi\.org\/(10\.[^?#]+)/)?.[1] || "").replace(/\/$/, "");
+  const evidenceType = /review|revis[aã]o/i.test(card.citation || "") ? "review" : "article";
+
   return enrichPaper({
-    title: paper.paper_title || "Título não identificado",
-    authors: paper.authors || "Autores não identificados",
-    year: Number(paper.publication_year) || null,
-    journal: paper.journal_name && paper.journal_name !== "null" ? paper.journal_name : "Fonte não identificada",
-    citations: Number(paper.citation_count) || 0,
-    url: paper.url || "#",
-    doi: "",
-    pmid: "",
-    abstract: "",
-    source: "BrowserAct JSON",
-    evidenceType: titleCaseEvidence("article", paper.paper_title),
+    title: card.title,
+    displayTitle: card.title,
+    displaySummary: card.summary,
+    readerText: (card.body || []).join(" "),
+    authors: card.citation || "Referência científica curada pela DOD",
+    year: null,
+    journal: `MeSH: ${card.mesh?.term || "termo não informado"}`,
+    citations: 0,
+    url: card.source,
+    domainOverride: "PubMed / MeSH",
+    publisher: "NCBI",
+    doi,
+    pmid,
+    abstract: [card.summary, ...(card.body || [])].filter(Boolean).join(" "),
+    source: "PubMed + MeSH",
+    evidenceType,
     isOpenAccess: false,
+    meshTerms: card.mesh?.term ? [card.mesh.term] : [],
+    libraryCategory: card.category,
+    libraryOrder,
+    cardCode: card.mark,
+    tags: card.tags || [],
   });
 }
 
@@ -1061,22 +1076,27 @@ function resetYearOptions() {
   state.year = els.yearSelect.value;
 }
 
-function syncActiveTopicChip(topic) {
-  const normalizedTopic = normalizeText(topic);
-  document.querySelectorAll("[data-topic]").forEach((button) => {
-    const isMatch = normalizeText(button.dataset.topic || "") === normalizedTopic;
-    button.classList.toggle("is-active", isMatch);
+function syncActiveLibraryChip(category) {
+  document.querySelectorAll("[data-library-category]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.libraryCategory === category);
   });
 }
 
 function loadDefaultLibrary() {
   els.topicInput.value = "";
-  syncActiveTopicChip("");
-  searchScientific({
-    fallbackTopic: DEFAULT_LIBRARY_TOPIC,
-    fallbackTopics: DEFAULT_LIBRARY_TOPICS,
-    publicLabel: "Biblioteca científica DOD",
-  });
+  els.searchInput.value = "";
+  state.query = "";
+  state.category = "all";
+  syncActiveLibraryChip("all");
+  state.papers = scientificLibraryCards.map(normalizeCuratedCard);
+  state.preserveLibraryOrder = true;
+  state.dataSource = "PubMed + MeSH";
+  state.lastTopic = "Biblioteca científica DOD";
+  state.expandedTopic = "";
+  state.synthesis = buildSynthesis(state.papers);
+  resetYearOptions();
+  render();
+  setStatus(`Biblioteca científica DOD pronta com ${state.papers.length} cards curados e rastreáveis.`);
 }
 
 function clearCardsForSearch() {
@@ -1102,15 +1122,19 @@ function clearCardsForSearch() {
 function setupEvents() {
   els.researchForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    syncActiveTopicChip(els.topicInput.value.trim());
-    if (!els.topicInput.value.trim()) {
+    const topic = els.topicInput.value.trim();
+    if (!topic) {
       loadDefaultLibrary();
       return;
     }
-    searchScientific();
+    state.category = "all";
+    state.query = normalizeText(topic);
+    els.searchInput.value = topic;
+    syncActiveLibraryChip("all");
+    render();
+    setStatus(`${getFilteredPapers().length} cards encontrados na biblioteca curada para "${topic}".`);
   });
 
-  els.loadLocalButton.addEventListener("click", () => loadLocalData());
   els.copyStrategyButton.addEventListener("click", () => copySearchStrategy());
   els.exportJsonButton.addEventListener("click", () => exportData("json"));
   els.exportCsvButton.addEventListener("click", () => exportData("csv"));
@@ -1127,7 +1151,7 @@ function setupEvents() {
   });
 
   els.searchInput.addEventListener("input", (event) => {
-    state.query = event.target.value.trim().toLowerCase();
+    state.query = normalizeText(event.target.value.trim());
     render();
   });
 
@@ -1157,18 +1181,16 @@ function setupEvents() {
     render();
   });
 
-  document.querySelectorAll("[data-topic]").forEach((button) => {
+  document.querySelectorAll("[data-library-category]").forEach((button) => {
     button.addEventListener("click", () => {
-      els.topicInput.value = button.dataset.topic || "";
-      syncActiveTopicChip(els.topicInput.value.trim());
-      if (!els.topicInput.value.trim()) {
-        loadDefaultLibrary();
-        return;
-      }
-      searchScientific({
-        queryTopic: button.dataset.queryTopic || "",
-        displayTopic: els.topicInput.value.trim(),
-      });
+      state.category = button.dataset.libraryCategory || "all";
+      state.query = "";
+      els.topicInput.value = "";
+      els.searchInput.value = "";
+      syncActiveLibraryChip(state.category);
+      render();
+      const label = button.textContent.trim();
+      setStatus(`${getFilteredPapers().length} cards na categoria ${label}.`);
     });
   });
 
@@ -1279,8 +1301,8 @@ async function searchScientific(options = {}) {
       setStatus(`${state.dataSource} retornou ${state.papers.length} trabalhos para "${publicLabel}".${expansionNote}${partialNote}`);
     }
   } catch (error) {
-    setStatus(`Falha na busca: ${error.message}. O JSON local continua disponível.`, true);
-    if (!state.papers.length) await loadLocalData();
+    if (!state.papers.length) loadDefaultLibrary();
+    setStatus(`A busca externa não respondeu (${error.message}). A biblioteca curada continua disponível.`, true);
   } finally {
     setLoading(false);
   }
@@ -1329,32 +1351,8 @@ function applyPicoToTopic() {
   setStatus("PICO aplicado ao tema de busca.");
 }
 
-async function loadLocalData() {
-  setLoading(true, "Carregando JSON local...");
-  try {
-    const response = await fetch(DATA_URL);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const raw = await response.json();
-    state.papers = dedupePapers(raw.map(normalizeLocalPaper));
-    state.dataSource = "JSON local";
-    state.lastTopic = "BrowserAct export";
-    state.synthesis = buildSynthesis(state.papers);
-    resetYearOptions();
-    render();
-    setStatus(`JSON local carregado com ${state.papers.length} artigos.`);
-  } catch (error) {
-    els.cards.innerHTML = "";
-    els.emptyState.hidden = false;
-    els.emptyState.textContent = `Não consegui carregar ${DATA_URL}: ${error.message}`;
-    setStatus(`Falha ao carregar JSON local: ${error.message}`, true);
-  } finally {
-    setLoading(false);
-  }
-}
-
 function setLoading(isLoading, message) {
   els.searchButton.disabled = isLoading;
-  els.loadLocalButton.disabled = isLoading;
   if (message) setStatus(message);
 }
 
@@ -1366,13 +1364,14 @@ function setStatus(message, isError = false) {
 function getFilteredPapers() {
   const strongEvidence = new Set(["guideline", "systematic-review", "meta-analysis", "trial"]);
   const filtered = state.papers.filter((paper) => {
-    const haystack = `${paper.title} ${paper.authors} ${paper.journal} ${paper.domain} ${paper.evidenceType}`.toLowerCase();
+    const haystack = normalizeText(`${paper.title} ${paper.authors} ${paper.journal} ${paper.domain} ${paper.evidenceType} ${paper.abstract || ""} ${(paper.meshTerms || []).join(" ")}`);
     const matchesQuery = !state.query || haystack.includes(state.query);
+    const matchesCategory = state.category === "all" || paper.libraryCategory === state.category;
     const matchesYear = state.year === "all" || String(paper.year) === state.year;
     const matchesCitations = paper.citations >= state.minCitations;
     const matchesSource = !state.cleanSources || !paper.isNoisy;
     const matchesEvidence = !state.strictEvidence || strongEvidence.has(paper.evidenceType);
-    return matchesQuery && matchesYear && matchesCitations && matchesSource && matchesEvidence;
+    return matchesQuery && matchesCategory && matchesYear && matchesCitations && matchesSource && matchesEvidence;
   });
 
   return filtered.sort((a, b) => {
@@ -1427,8 +1426,8 @@ function renderCard(paper) {
   const readButton = node.querySelector(".read-button");
   const [cardA, cardB] = colorPair(paper);
   const href = bestSourceUrl(paper);
-  const translatedTitle = buildPtBrTitle(paper);
-  const translatedAbstract = buildPtBrSummary(paper, 220);
+  const translatedTitle = paper.displayTitle || buildPtBrTitle(paper);
+  const translatedAbstract = paper.displaySummary || buildPtBrSummary(paper, 220);
 
   visual.style.setProperty("--card-a", cardA);
   visual.style.setProperty("--card-b", cardB);
@@ -1460,7 +1459,7 @@ function openReader(paper) {
     `score ${paper.score}`,
   ].filter(Boolean);
 
-  els.readerTitle.textContent = buildPtBrTitle(paper);
+  els.readerTitle.textContent = paper.displayTitle || buildPtBrTitle(paper);
   els.readerOriginalTitle.textContent = `Original: ${paper.title}`;
   els.readerTags.innerHTML = "";
   [labelEvidence(paper.evidenceType), paper.source.includes("PubMed") ? "PubMed" : "OpenAlex", accessLabel(paper), "DOD"].forEach((tag) => {
@@ -1469,7 +1468,7 @@ function openReader(paper) {
     item.textContent = tag;
     els.readerTags.append(item);
   });
-  els.readerAbstract.textContent = buildPtBrSummary(paper, 900);
+  els.readerAbstract.textContent = paper.readerText || paper.displaySummary || buildPtBrSummary(paper, 900);
   els.readerSource.textContent = [paper.journal, paper.year || "ano não informado"].filter(Boolean).join(" • ");
   els.readerTrace.textContent = trace.join(" • ") || "Metadado mínimo disponível.";
   els.readerAuthors.textContent = paper.authors || "Autores não identificados";

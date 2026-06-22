@@ -52,11 +52,11 @@
         </form>
 
         <div class="chip-row" aria-label="Temas rápidos">
-          <button class="filter-chip is-active" type="button" data-topic="">Tudo</button>
-          <button class="filter-chip" type="button" data-topic="cefaleia, emergência, tontura, vertigem, equilíbrio e sepse" data-query-topic="(headache emergency) OR (dizziness vertigo balance) OR (sepsis acute respiratory failure) OR (neurological assessment risk stratification)">Neuro</button>
-          <button class="filter-chip" type="button" data-topic="dor, inflamação, recuperação muscular, tendão e reabilitação" data-query-topic="(pain inflammation recovery) OR (muscle injury rehabilitation) OR (tendon load adaptation)">Physio</button>
-          <button class="filter-chip" type="button" data-topic="força, potência, fadiga, carga de treino e performance esportiva" data-query-topic="(muscle strength power) OR (fatigue sports performance) OR (training load recovery)">Sport</button>
-          <button class="filter-chip" type="button" data-topic="variabilidade da frequência cardíaca, sono, estresse e recuperação" data-query-topic="(heart rate variability recovery) OR (sleep circadian rhythm performance) OR (stress cortisol autonomic nervous system)">Homeostase</button>
+          <button class="filter-chip is-active" type="button" data-library-category="all">Tudo</button>
+          <button class="filter-chip" type="button" data-library-category="neuro">Neuro</button>
+          <button class="filter-chip" type="button" data-library-category="physio">Physio</button>
+          <button class="filter-chip" type="button" data-library-category="sport">Sport</button>
+          <button class="filter-chip" type="button" data-library-category="health">Homeostase</button>
         </div>
 
         <p class="run-status" id="runStatus">Preparando biblioteca científica...</p>
@@ -69,7 +69,6 @@
         <select id="sourceSelect"><option value="both" selected>OpenAlex + PubMed</option></select>
         <input id="fromYearInput" type="number" value="2020" />
         <select id="resultLimit"><option value="50" selected>50</option></select>
-        <button type="button" id="loadLocalButton"></button>
         <button type="button" id="copyStrategyButton"></button>
         <button type="button" id="exportJsonButton"></button>
         <button type="button" id="exportCsvButton"></button>
@@ -163,6 +162,6 @@
       </article>
     </div>
 
-    <script src="./app.js"></script>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>
