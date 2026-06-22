@@ -12,6 +12,7 @@ node_modules/
 .ruff_cache/
 /dist/
 /build/
+/public/
 
 # IDE
 .idea/

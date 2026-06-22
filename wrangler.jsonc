@@ -5,8 +5,19 @@
   "observability": {
     "enabled": true
   },
+  "build": {
+    "command": "sh ./scripts/prepare-public.sh",
+    "watch_dir": [
+      "index.html",
+      "app.js",
+      "scientific-library-data.js",
+      "styles.css",
+      "favicon.svg",
+      "dodperoformance.main"
+    ]
+  },
   "assets": {
-    "directory": "Dodperformance.  RX"
+    "directory": "./public"
   },
   "compatibility_flags": [
     "nodejs_compat"
