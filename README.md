@@ -20,6 +20,6 @@ A página inicial é a única dona da biblioteca científica. O módulo ECG mant
 
 ## Deploy
 
-O workflow `.github/workflows/deploy-cloudflare-pages.yml` publica somente os arquivos listados acima no Cloudflare Pages. O deploy de produção ocorre a partir da branch `main`.
+O script `scripts/prepare-public.sh` monta o pacote publicado. Ele é usado tanto pelo preview do Wrangler quanto pelo workflow `.github/workflows/deploy-cloudflare-pages.yml`, evitando divergência entre teste e produção. O deploy de produção ocorre a partir da branch `main`.
 
 Os diretórios históricos mantidos no repositório não fazem parte do pacote publicado.
