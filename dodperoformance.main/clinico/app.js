@@ -1069,14 +1069,10 @@ function syncActiveTopicChip(topic) {
   });
 }
 
-function loadDefaultLibrary() {
+async function loadDefaultLibrary() {
   els.topicInput.value = "";
   syncActiveTopicChip("");
-  searchScientific({
-    fallbackTopic: DEFAULT_LIBRARY_TOPIC,
-    fallbackTopics: DEFAULT_LIBRARY_TOPICS,
-    publicLabel: "Biblioteca científica DOD",
-  });
+  await loadLocalData();
 }
 
 function clearCardsForSearch() {
@@ -1336,12 +1332,12 @@ async function loadLocalData() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const raw = await response.json();
     state.papers = dedupePapers(raw.map(normalizeLocalPaper));
-    state.dataSource = "JSON local";
-    state.lastTopic = "BrowserAct export";
+    state.dataSource = "Biblioteca local";
+    state.lastTopic = "Biblioteca científica DOD";
     state.synthesis = buildSynthesis(state.papers);
     resetYearOptions();
     render();
-    setStatus(`JSON local carregado com ${state.papers.length} artigos.`);
+    setStatus(`Biblioteca local carregada com ${state.papers.length} artigos rastreáveis.`);
   } catch (error) {
     els.cards.innerHTML = "";
     els.emptyState.hidden = false;
