@@ -257,37 +257,90 @@ select:focus {
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 18px;
 }
 
 .paper-card {
+  position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 390px;
-  padding: 20px;
+  min-height: 360px;
+  padding: 18px;
+  overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 7px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01)), var(--surface);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.008)),
+    var(--surface);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 28px rgba(0, 0, 0, 0.16);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.paper-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 18px auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(111, 183, 255, 0.7), transparent);
+  opacity: 0.48;
+}
+
+.paper-card:focus-within {
+  border-color: rgba(111, 183, 255, 0.64);
+  box-shadow:
+    0 0 0 2px rgba(111, 183, 255, 0.1),
+    0 18px 36px rgba(0, 0, 0, 0.26);
+}
+
+@media (hover: hover) {
+  .paper-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(111, 183, 255, 0.45);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.05),
+      0 20px 42px rgba(0, 0, 0, 0.28);
+  }
 }
 
 .card-visual {
+  position: relative;
   display: grid;
   place-items: center;
-  min-height: 132px;
-  margin-bottom: 16px;
-  border-radius: 7px;
+  min-height: 114px;
+  margin-bottom: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 9px;
   background:
     radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.22), transparent 22%),
     linear-gradient(135deg, var(--card-a, #4b3b88), var(--card-b, #08101a));
+  box-shadow: inset 0 -24px 38px rgba(0, 0, 0, 0.14);
+}
+
+.card-visual::after {
+  content: "";
+  position: absolute;
+  inset: auto -12% -62% 26%;
+  height: 92%;
+  border-radius: 50%;
+  background: rgba(111, 183, 255, 0.09);
+  filter: blur(20px);
 }
 
 .card-code {
+  position: relative;
+  z-index: 1;
   color: #ffffff;
-  font-size: clamp(2.1rem, 4vw, 3.1rem);
+  font-size: clamp(2rem, 3.5vw, 2.85rem);
   line-height: 1;
   font-weight: 950;
-  letter-spacing: 0;
+  letter-spacing: -0.025em;
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
 }
 
 .tag-row,
@@ -298,7 +351,8 @@ select:focus {
 }
 
 .tag-row {
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 13px;
 }
 
 .source-pill,
@@ -306,15 +360,16 @@ select:focus {
 .oa-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
+  min-height: 26px;
   max-width: 100%;
-  padding: 5px 9px;
-  border-radius: 4px;
+  padding: 4px 8px;
+  border: 1px solid rgba(159, 196, 244, 0.07);
+  border-radius: 5px;
   background: var(--chip);
   color: var(--chip-text);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 950;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.055em;
   text-transform: uppercase;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -324,8 +379,8 @@ select:focus {
 .paper-card h2 {
   margin: 0;
   color: #ffffff;
-  font-size: 1.18rem;
-  line-height: 1.25;
+  font-size: 1.16rem;
+  line-height: 1.28;
   font-weight: 900;
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -334,21 +389,23 @@ select:focus {
 }
 
 .abstract {
-  margin: 14px 0 0;
+  margin: 11px 0 0;
   color: var(--muted);
-  font-size: 0.98rem;
-  line-height: 1.5;
+  font-size: 0.94rem;
+  line-height: 1.46;
   font-weight: 650;
   display: -webkit-box;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .journal {
-  margin: 10px 0 0;
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   color: #7f8792;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   line-height: 1.4;
   font-weight: 750;
   display: -webkit-box;
@@ -359,21 +416,58 @@ select:focus {
 
 .card-actions {
   display: flex;
-  gap: 8px;
+  gap: 9px;
   margin-top: auto;
   padding-top: 14px;
 }
 
-.source-link,
-.read-button {
+.card-actions .source-link,
+.card-actions .read-button {
+  flex: 1;
   min-height: 40px;
-  padding: 9px 13px;
-  font-size: 0.93rem;
+  min-width: 0;
+  gap: 7px;
+  padding: 9px 11px;
+  border-radius: 7px;
+  font-size: 0.86rem;
   background: #0b1017;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
 }
 
-.read-button {
-  min-width: 48px;
+.card-actions .source-link {
+  color: var(--muted);
+}
+
+.card-actions .source-link::after {
+  content: "↗";
+  color: var(--blue);
+  font-size: 0.86rem;
+}
+
+.card-actions .read-button {
+  border-color: rgba(111, 183, 255, 0.34);
+  background: linear-gradient(135deg, #17365c, #111b2a);
+}
+
+.card-actions .read-button::after {
+  content: "→";
+  color: #a8d2ff;
+  font-size: 0.9rem;
+}
+
+.card-actions .source-link:hover,
+.card-actions .source-link:focus-visible {
+  border-color: rgba(181, 184, 191, 0.42);
+  color: #ffffff;
+}
+
+.card-actions .read-button:hover,
+.card-actions .read-button:focus-visible {
+  border-color: rgba(111, 183, 255, 0.72);
+  background: linear-gradient(135deg, #1b477a, #132338);
 }
 
 .empty-state {
@@ -520,6 +614,24 @@ select:focus {
   margin-top: 14px;
 }
 
+.reader-actions .source-link,
+.reader-actions .read-button {
+  min-height: 42px;
+  padding: 10px 14px;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  background: #0b1017;
+}
+
+.reader-actions .source-link {
+  border-color: rgba(111, 183, 255, 0.34);
+  color: #ffffff;
+}
+
+.reader-actions .read-button {
+  color: var(--muted);
+}
+
 .engine-hidden,
 .citation-pill,
 .authors,
@@ -575,6 +687,11 @@ select:focus {
 
   .paper-card {
     min-height: 0;
+    padding: 16px;
+  }
+
+  .card-visual {
+    min-height: 104px;
   }
 
   .reader-modal {

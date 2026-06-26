@@ -1445,6 +1445,8 @@ function renderCard(paper) {
   oa.textContent = "DOD";
   oa.classList.toggle("is-oa", paper.isOpenAccess);
   link.href = href;
+  link.setAttribute("aria-label", `Abrir fonte científica de ${translatedTitle || paper.title}`);
+  readButton.setAttribute("aria-label", `Abrir leitura guiada de ${translatedTitle || paper.title}`);
   readButton.addEventListener("click", () => openReader(paper));
 
   return node;
