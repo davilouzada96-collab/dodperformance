@@ -6,7 +6,7 @@
     <title>Área acadêmica · DOD</title>
     <link rel="icon" href="../../favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./styles.css" />
-    <link rel="stylesheet" href="./bench.css" />
+    <link rel="stylesheet" href="./bench.css?v=20260704-pharmacology" />
   </head>
   <body>
     <header class="site-header">
@@ -124,11 +124,14 @@
           <button class="disclosure-toggle" type="button" data-panel="picoPanel" aria-expanded="false" aria-controls="picoPanel">
             <span class="disclosure-step">1</span> Estruturar pergunta <span class="chevron">▾</span>
           </button>
+          <button class="disclosure-toggle" type="button" data-panel="pharmaPanel" aria-expanded="false" aria-controls="pharmaPanel">
+            <span class="disclosure-step">2</span> Farmacologia acadêmica <span class="chevron">▾</span>
+          </button>
           <button class="disclosure-toggle" type="button" data-panel="filterPanel" aria-expanded="false" aria-controls="filterPanel">
-            <span class="disclosure-step">2</span> Refinar evidência <span class="chevron">▾</span>
+            <span class="disclosure-step">3</span> Refinar evidência <span class="chevron">▾</span>
           </button>
           <button class="disclosure-toggle" type="button" data-panel="synthPanel" aria-expanded="false" aria-controls="synthPanel">
-            <span class="disclosure-step">3</span> Ver panorama <span class="chevron">▾</span>
+            <span class="disclosure-step">4</span> Ver panorama <span class="chevron">▾</span>
           </button>
         </div>
 
@@ -136,8 +139,8 @@
         <div class="panel" id="picoPanel" hidden>
           <h3>Estruturar a pergunta (PICO)</h3>
           <p class="panel-hint">
-            PICO separa a pergunta clínica em partes. Preencha o que souber, ou deixe o sistema inferir a
-            partir do tema, e aplique na busca para resultados mais precisos.
+            PICO separa a pergunta clínica em partes. A inferência é conservadora: preenche somente
+            sinais reconhecidos e não inventa intervenção ou comparador. Confirme tudo antes de aplicar.
           </p>
           <div class="pico-grid">
             <div class="field-stack">
@@ -158,12 +161,79 @@
             </div>
           </div>
           <div class="panel-actions">
-            <button class="ghost-button" type="button" id="inferPicoButton">Inferir do tema</button>
+            <button class="ghost-button" type="button" id="inferPicoButton">Inferir com cautela</button>
             <button class="ghost-button is-primary" type="button" id="applyPicoButton">Aplicar à busca</button>
           </div>
         </div>
 
-        <!-- Painel 2 · Filtros de qualidade -->
+        <!-- Painel 2 · Farmacologia acadêmica -->
+        <div class="panel pharma-panel" id="pharmaPanel" hidden>
+          <div class="pharma-panel__head">
+            <div>
+              <h3>Farmacologia orientada pela hipótese</h3>
+              <p class="panel-hint">
+                Pesquisa evidência, classes e documentos oficiais relacionados à suspeita informada.
+                Não escolhe tratamento, não calcula dose e não transforma hipótese em prescrição.
+              </p>
+            </div>
+            <span class="pharma-scope">ACADÊMICO · NÃO PRESCREVE</span>
+          </div>
+
+          <div class="pico-grid">
+            <div class="field-stack">
+              <label for="pharmaCondition">Hipótese ou condição</label>
+              <input id="pharmaCondition" type="text" placeholder="ex.: prevenção secundária após AVC isquêmico" />
+            </div>
+            <div class="field-stack">
+              <label for="pharmaDrug">Princípio ativo ou classe (opcional)</label>
+              <input id="pharmaDrug" type="text" placeholder="ex.: anticoagulante ou apixabana" />
+            </div>
+            <div class="field-stack">
+              <label for="pharmaContext">Objetivo acadêmico</label>
+              <select id="pharmaContext">
+                <option value="">Explorar farmacoterapia</option>
+                <option value="acute treatment">Fase aguda</option>
+                <option value="maintenance therapy">Manutenção</option>
+                <option value="primary prevention">Prevenção primária</option>
+                <option value="secondary prevention">Prevenção secundária</option>
+                <option value="adverse effects contraindications safety">Segurança e contraindicações</option>
+              </select>
+            </div>
+            <div class="field-stack">
+              <label for="pharmaPopulation">População ou contexto (opcional)</label>
+              <input id="pharmaPopulation" type="text" placeholder="ex.: idosos · insuficiência renal · ambulatório" />
+            </div>
+          </div>
+
+          <div class="panel-actions">
+            <button class="ghost-button" type="button" id="inferPharmaButton">Trazer tema para hipótese</button>
+            <button class="ghost-button is-primary" type="button" id="applyPharmaButton">Pesquisar evidência farmacológica</button>
+            <button class="ghost-button" type="button" id="lookupDrugButton">Identificar medicamento informado</button>
+          </div>
+
+          <div class="pharma-source-grid" aria-label="Fontes farmacológicas">
+            <a href="https://lhncbc.nlm.nih.gov/RxNav/APIs/index.html" target="_blank" rel="noopener noreferrer">
+              <strong>RxNorm / RxClass</strong><span>nomes padronizados e classes</span>
+            </a>
+            <a id="dailyMedLink" href="https://dailymed.nlm.nih.gov/dailymed/" target="_blank" rel="noopener noreferrer">
+              <strong>DailyMed</strong><span>rotulagem farmacológica atual</span>
+            </a>
+            <a href="https://consultas.anvisa.gov.br/#/bulario/" target="_blank" rel="noopener noreferrer">
+              <strong>Bulário Anvisa</strong><span>referência regulatória brasileira</span>
+            </a>
+            <a href="https://www.gov.br/conitec/pt-br/assuntos/avaliacao-de-tecnologias-em-saude/protocolos-clinicos-e-diretrizes-terapeuticas/pcdt" target="_blank" rel="noopener noreferrer">
+              <strong>PCDT / Conitec</strong><span>protocolos e critérios do SUS</span>
+            </a>
+          </div>
+
+          <div class="pharma-lookup" id="pharmaLookup" aria-live="polite" hidden></div>
+          <p class="pharma-warning">
+            A ausência de resultado não significa ausência de opção terapêutica. Confirme indicação,
+            contraindicações, dose e população diretamente no documento oficial e com supervisão qualificada.
+          </p>
+        </div>
+
+        <!-- Painel 3 · Filtros de qualidade -->
         <div class="panel" id="filterPanel" hidden>
           <h3>Refinar a evidência</h3>
           <p class="panel-hint">
@@ -202,7 +272,7 @@
           </div>
         </div>
 
-        <!-- Painel 3 · Panorama (síntese + exportação) -->
+        <!-- Painel 4 · Panorama (síntese + exportação) -->
         <div class="panel" id="synthPanel" hidden>
           <h3>Panorama do conjunto</h3>
           <p class="panel-hint">
@@ -311,7 +381,7 @@
     </div>
 
     <!-- Motor reaproveitado, idêntico ao baseline -->
-    <script src="./app.js"></script>
+    <script src="./app.js?v=20260704-pharmacology"></script>
     <!-- Camada acadêmica: revelação progressiva + regra forte da honestidade -->
     <script src="./bench.js"></script>
     <!-- Cadastro acadêmico local e gratuito -->

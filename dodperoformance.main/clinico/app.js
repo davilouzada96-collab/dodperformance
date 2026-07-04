@@ -1,6 +1,8 @@
 const DATA_URL = "./output_data_1779051008.json";
 const OPENALEX_URL = "https://api.openalex.org/works";
 const PUBMED_BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
+const RXNORM_DRUGS_URL = "https://rxnav.nlm.nih.gov/REST/drugs.json";
+const RXNORM_APPROXIMATE_URL = "https://rxnav.nlm.nih.gov/REST/approximateTerm.json";
 const PROJECT_STORAGE_KEY = "dodResearchProjects";
 const SEARCH_CACHE_KEY = "dodResearchCache";
 const SEARCH_CACHE_VERSION = "v2";
@@ -532,6 +534,15 @@ const els = {
   picoIntervention: document.querySelector("#picoIntervention"),
   picoComparator: document.querySelector("#picoComparator"),
   picoOutcome: document.querySelector("#picoOutcome"),
+  pharmaCondition: document.querySelector("#pharmaCondition"),
+  pharmaDrug: document.querySelector("#pharmaDrug"),
+  pharmaContext: document.querySelector("#pharmaContext"),
+  pharmaPopulation: document.querySelector("#pharmaPopulation"),
+  inferPharmaButton: document.querySelector("#inferPharmaButton"),
+  applyPharmaButton: document.querySelector("#applyPharmaButton"),
+  lookupDrugButton: document.querySelector("#lookupDrugButton"),
+  pharmaLookup: document.querySelector("#pharmaLookup"),
+  dailyMedLink: document.querySelector("#dailyMedLink"),
   projectNameInput: document.querySelector("#projectNameInput"),
   saveProjectButton: document.querySelector("#saveProjectButton"),
   projectSelect: document.querySelector("#projectSelect"),
@@ -1114,6 +1125,10 @@ function setupEvents() {
   els.exportMarkdownButton.addEventListener("click", () => exportData("markdown"));
   els.inferPicoButton.addEventListener("click", () => inferPico());
   els.applyPicoButton.addEventListener("click", () => applyPicoToTopic());
+  els.inferPharmaButton.addEventListener("click", () => inferPharmaFromTopic());
+  els.applyPharmaButton.addEventListener("click", () => applyPharmacologySearch());
+  els.lookupDrugButton.addEventListener("click", () => lookupDrugTerminology());
+  els.pharmaDrug.addEventListener("input", updatePharmaSourceLinks);
   els.saveProjectButton.addEventListener("click", () => saveProject());
   els.loadProjectButton.addEventListener("click", () => loadProject());
   els.deleteProjectButton.addEventListener("click", () => deleteProject());
@@ -1175,6 +1190,7 @@ function setupEvents() {
   });
 
   refreshProjectSelect();
+  updatePharmaSourceLinks();
 }
 
 async function fetchOpenAlex(topic, fromYear, limit) {
@@ -1290,22 +1306,190 @@ function sourceLabel(source) {
 
 function inferPico() {
   const topic = els.topicInput.value.trim();
-  const tokens = topic.split(/\s+/).filter(Boolean);
   const lower = normalizeText(topic);
-  const outcomeHints = ["mortalidade", "diagnostico", "acuracia", "sobrevida", "prognostico", "readmissao", "complicacao", "desfecho", "mortality", "diagnosis", "accuracy", "survival", "prognosis", "outcome"];
-  const interventionHints = ["aprendizado de maquina", "inteligencia artificial", "aprendizado profundo", "machine learning", "artificial intelligence", "deep learning", "rastreamento", "tratamento", "modelo"];
-  const populationHints = ["pediatrico", "pediatrica", "criancas", "crianca", "adultos", "idosos", "sepse", "asma", "avc", "diabetes", "emergencia", "uti", "saude", "pediatric", "children", "adult", "elderly", "sepsis", "asthma", "stroke", "diabetes", "emergency", "icu", "healthcare"];
-
-  const intervention = interventionHints.find((hint) => lower.includes(normalizeText(hint))) || tokens.slice(0, 2).join(" ");
-  const outcome = outcomeHints.find((hint) => lower.includes(normalizeText(hint))) || "";
-  const populationTerms = populationHints.filter((hint) => lower.includes(normalizeText(hint))).join(" ");
-  const population = populationTerms || tokens.filter((term) => !intervention.toLowerCase().includes(term.toLowerCase())).slice(-3).join(" ");
+  const populations = [
+    [/\bidos[oa]s?\b|\belderly\b/, "idosos"],
+    [/\badultos?\b|\badults?\b/, "adultos"],
+    [/\bcriancas?\b|\bpediatric\b|\bchildren\b/, "crianças"],
+    [/\bgestantes?\b|\bpregnan/, "gestantes"],
+    [/\buti\b|\bintensive care\b/, "pacientes em UTI"],
+    [/\bemergencia\b|\bemergency\b/, "pacientes em emergência"],
+  ];
+  const interventions = [
+    ["aprendizado de maquina", "aprendizado de máquina"],
+    ["inteligencia artificial", "inteligência artificial"],
+    ["aprendizado profundo", "aprendizado profundo"],
+    ["machine learning", "machine learning"],
+    ["artificial intelligence", "artificial intelligence"],
+    ["deep learning", "deep learning"],
+    ["rastreamento", "rastreamento"],
+    ["tratamento", "tratamento"],
+  ];
+  const outcomes = [
+    ["mortalidade", "mortalidade"], ["diagnostico", "diagnóstico"],
+    ["acuracia", "acurácia"], ["sobrevida", "sobrevida"],
+    ["prognostico", "prognóstico"], ["readmissao", "readmissão"],
+    ["complicacao", "complicação"], ["mortality", "mortality"],
+    ["diagnosis", "diagnosis"], ["accuracy", "accuracy"],
+    ["survival", "survival"], ["outcome", "outcome"],
+  ];
+  const comparatorMatch = lower.match(/\b(?:versus|vs\.?|comparado(?: a| com)?|em comparacao com)\s+([^,;]+)/);
+  const population = populations.filter(([pattern]) => pattern.test(lower)).map(([, label]) => label).join(" · ");
+  const intervention = interventions.find(([hint]) => lower.includes(hint))?.[1] || "";
+  const outcome = outcomes.find(([hint]) => lower.includes(hint))?.[1] || "";
+  const comparator = comparatorMatch?.[1]?.trim() || "";
 
   els.picoPopulation.value = population;
   els.picoIntervention.value = intervention;
-  els.picoComparator.value = els.picoComparator.value || "cuidado usual";
+  els.picoComparator.value = comparator;
   els.picoOutcome.value = outcome;
-  setStatus("PICO inferido. Ajuste os campos se quiser e aplique no tema.");
+
+  if (![population, intervention, comparator, outcome].some(Boolean)) {
+    setStatus("Não foi possível inferir o PICO com segurança. Preencha os campos manualmente.", true);
+    return;
+  }
+  setStatus("Inferência conservadora: somente campos reconhecidos foram preenchidos. Confirme antes de aplicar.");
+}
+
+function inferPharmaFromTopic() {
+  const topic = els.topicInput.value.trim();
+  if (!topic) {
+    setStatus("Escreva uma hipótese no tema antes de trazê-la para farmacologia.", true);
+    return;
+  }
+  els.pharmaCondition.value = topic;
+  setStatus("Tema copiado para a hipótese farmacológica. Revise antes de pesquisar.");
+}
+
+function updatePharmaSourceLinks() {
+  const drug = els.pharmaDrug.value.trim();
+  els.dailyMedLink.href = drug
+    ? `https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=${encodeURIComponent(drug)}`
+    : "https://dailymed.nlm.nih.gov/dailymed/";
+}
+
+function expandPharmacologyTerm(value) {
+  const expanded = expandPortugueseQuery(value);
+  return normalizeText(expanded) === normalizeText(value) ? value : `${value} ${expanded}`;
+}
+
+function applyPharmacologySearch() {
+  const condition = els.pharmaCondition.value.trim();
+  const drug = els.pharmaDrug.value.trim();
+  const context = els.pharmaContext.value;
+  const population = els.pharmaPopulation.value.trim();
+  if (!condition) {
+    setStatus("Informe a hipótese ou condição. O sistema não deduz tratamento a partir de termos soltos.", true);
+    return;
+  }
+
+  const query = [
+    expandPharmacologyTerm(condition),
+    drug,
+    context,
+    population ? expandPharmacologyTerm(population) : "",
+    "pharmacotherapy",
+  ].filter(Boolean).join(" ");
+  els.topicInput.value = [condition, drug, els.pharmaContext.selectedOptions[0]?.textContent, population]
+    .filter((value) => value && value !== "Explorar farmacoterapia")
+    .join(" · ");
+  syncActiveTopicChip("");
+  void searchScientific({
+    queryTopic: query,
+    publicLabel: `Farmacologia acadêmica · ${condition}`,
+  });
+}
+
+function rxNormTypeLabel(type) {
+  const labels = {
+    IN: "princípio ativo",
+    PIN: "princípio ativo preciso",
+    SCD: "medicamento clínico",
+    SBD: "medicamento de marca",
+    BN: "nome de marca",
+  };
+  return labels[type] || type || "conceito farmacológico";
+}
+
+function renderRxNormConcepts(drug, concepts) {
+  els.pharmaLookup.replaceChildren();
+  els.pharmaLookup.hidden = false;
+  const title = document.createElement("h4");
+  title.textContent = concepts.length ? `Identificação farmacológica para “${drug}”` : "Nenhum conceito padronizado encontrado";
+  const note = document.createElement("p");
+  note.textContent = concepts.length
+    ? "Resultados do vocabulário RxNorm. Eles identificam nomes e apresentações; não confirmam indicação para a hipótese."
+    : "Tente informar o princípio ativo, sem dose ou via. A ausência no RxNorm não exclui registro em outras jurisdições.";
+  els.pharmaLookup.append(title, note);
+  if (!concepts.length) return;
+  els.dailyMedLink.href = `https://dailymed.nlm.nih.gov/dailymed/search.cfm?labeltype=all&query=${encodeURIComponent(concepts[0].name)}`;
+
+  const list = document.createElement("ul");
+  list.className = "pharma-concepts";
+  concepts.forEach((concept) => {
+    const item = document.createElement("li");
+    const name = document.createElement("strong");
+    const meta = document.createElement("span");
+    name.textContent = concept.name;
+    meta.textContent = `${rxNormTypeLabel(concept.tty)} · RxCUI ${concept.rxcui}`;
+    item.append(name, meta);
+    list.append(item);
+  });
+  els.pharmaLookup.append(list);
+}
+
+async function lookupDrugTerminology() {
+  const drug = els.pharmaDrug.value.trim();
+  if (!drug) {
+    setStatus("Informe um princípio ativo ou medicamento. A suspeita sozinha não gera uma lista de remédios.", true);
+    return;
+  }
+  updatePharmaSourceLinks();
+  els.lookupDrugButton.disabled = true;
+  els.pharmaLookup.hidden = false;
+  els.pharmaLookup.textContent = "Consultando vocabulário farmacológico RxNorm...";
+  try {
+    const concepts = await fetchRxNormConcepts(drug);
+    renderRxNormConcepts(drug, concepts);
+    setStatus(concepts.length
+      ? `RxNorm identificou ${concepts.length} conceito(s). Confirme indicação nas fontes oficiais.`
+      : "RxNorm não encontrou correspondência. Nenhuma conclusão terapêutica foi gerada.");
+  } catch (error) {
+    els.pharmaLookup.textContent = "A consulta de terminologia não respondeu. Use os atalhos oficiais e tente novamente depois.";
+    setStatus(`Falha na consulta farmacológica: ${error.message}.`, true);
+  } finally {
+    els.lookupDrugButton.disabled = false;
+  }
+}
+
+async function fetchRxNormConcepts(drug) {
+  const exactResponse = await fetch(`${RXNORM_DRUGS_URL}?name=${encodeURIComponent(drug)}`);
+  if (!exactResponse.ok) throw new Error(`RxNorm HTTP ${exactResponse.status}`);
+  const exactPayload = await exactResponse.json();
+  const exact = (exactPayload.drugGroup?.conceptGroup || [])
+    .flatMap((group) => group.conceptProperties || [])
+    .filter((concept, index, items) => concept?.rxcui && items.findIndex((item) => item?.rxcui === concept.rxcui) === index)
+    .slice(0, 8);
+  if (exact.length) return exact;
+
+  const approximateParams = new URLSearchParams({ term: drug, maxEntries: "8", option: "1" });
+  const approximateResponse = await fetch(`${RXNORM_APPROXIMATE_URL}?${approximateParams.toString()}`);
+  if (!approximateResponse.ok) throw new Error(`RxNorm aproximado HTTP ${approximateResponse.status}`);
+  const approximatePayload = await approximateResponse.json();
+  const candidates = (approximatePayload.approximateGroup?.candidate || [])
+    .filter((candidate, index, items) => candidate?.rxcui && items.findIndex((item) => item?.rxcui === candidate.rxcui) === index)
+    .slice(0, 6);
+
+  const settled = await Promise.allSettled(candidates.map(async (candidate) => {
+    const response = await fetch(`https://rxnav.nlm.nih.gov/REST/rxcui/${encodeURIComponent(candidate.rxcui)}/properties.json`);
+    if (!response.ok) throw new Error(`RxNorm properties HTTP ${response.status}`);
+    const payload = await response.json();
+    return payload.properties || null;
+  }));
+  return settled
+    .filter((result) => result.status === "fulfilled" && result.value)
+    .map((result) => result.value)
+    .slice(0, 6);
 }
 
 function applyPicoToTopic() {
@@ -1738,6 +1922,12 @@ function currentProjectSnapshot(name) {
       comparator: els.picoComparator.value,
       outcome: els.picoOutcome.value,
     },
+    pharma: {
+      condition: els.pharmaCondition.value,
+      drug: els.pharmaDrug.value,
+      context: els.pharmaContext.value,
+      population: els.pharmaPopulation.value,
+    },
     papers: state.papers,
   };
 }
@@ -1777,6 +1967,11 @@ function loadProject() {
   els.picoIntervention.value = project.pico?.intervention || "";
   els.picoComparator.value = project.pico?.comparator || "";
   els.picoOutcome.value = project.pico?.outcome || "";
+  els.pharmaCondition.value = project.pharma?.condition || "";
+  els.pharmaDrug.value = project.pharma?.drug || "";
+  els.pharmaContext.value = project.pharma?.context || "";
+  els.pharmaPopulation.value = project.pharma?.population || "";
+  updatePharmaSourceLinks();
   state.papers = (project.papers || []).map(enrichPaper);
   state.dataSource = `${sourceLabel(els.sourceSelect.value)} salvo`;
   state.lastTopic = project.topic || "";

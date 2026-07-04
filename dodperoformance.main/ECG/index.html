@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="./tokens.css" />
   <link rel="stylesheet" href="./layout.css" />
   <link rel="stylesheet" href="./components.css" />
-  <link rel="stylesheet" href="./ai-ecg.css?v=20260621-clinical-note-alignment" />
+  <link rel="stylesheet" href="./ai-ecg.css?v=20260630-workbench-nav" />
   <style>
     .dod-ai-ecg__video-scene {
       position: relative;
@@ -204,6 +204,7 @@
       </button>
 
       <nav class="site-nav" id="site-nav" aria-label="Navegação principal" data-site-nav>
+        <a href="#bancada-ecg">Bancada ECG</a>
         <a href="#modos-leitura">Modos de leitura</a>
         <a href="#nota-clinica">Nota clínica</a>
       </nav>
@@ -227,7 +228,7 @@
           </p>
         </div>
 
-        <section class="ecg-workbench" aria-labelledby="ecg-workbench-title">
+        <section class="ecg-workbench" id="bancada-ecg" aria-labelledby="ecg-workbench-title">
           <div class="ecg-workbench__intro">
             <span class="dod-ai-ecg__section-kicker">Bancada local</span>
             <h2 id="ecg-workbench-title">Organizar uma leitura acadêmica</h2>
