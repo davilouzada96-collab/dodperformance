@@ -226,6 +226,109 @@
   margin-top: 14px;
 }
 
+.pharma-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.pharma-panel__head .panel-hint {
+  max-width: 760px;
+}
+
+.pharma-scope {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border: 1px solid rgba(124, 255, 197, 0.26);
+  border-radius: 999px;
+  background: rgba(27, 176, 116, 0.08);
+  color: #7cffc5;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.pharma-source-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.pharma-source-grid a {
+  display: grid;
+  gap: 5px;
+  min-height: 82px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: #0d1118;
+  color: #ffffff;
+}
+
+.pharma-source-grid a:hover,
+.pharma-source-grid a:focus-visible {
+  border-color: #4a4173;
+  background: var(--pro-soft);
+}
+
+.pharma-source-grid strong {
+  font-size: 0.82rem;
+}
+
+.pharma-source-grid span,
+.pharma-warning,
+.pharma-lookup p,
+.pharma-concepts span {
+  color: var(--muted-2);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.pharma-lookup {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.pharma-lookup[hidden] {
+  display: none;
+}
+
+.pharma-lookup h4 {
+  margin: 0 0 8px;
+  color: #ffffff;
+}
+
+.pharma-concepts {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pharma-concepts li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.pharma-concepts strong {
+  color: #ffffff;
+  font-size: 0.82rem;
+}
+
+.pharma-warning {
+  margin: 14px 0 0;
+}
+
 .ghost-button {
   display: inline-flex;
   align-items: center;
@@ -382,6 +485,15 @@
     position: static;
   }
   .pico-grid {
+    grid-template-columns: 1fr;
+  }
+  .pharma-panel__head {
+    display: grid;
+  }
+  .pharma-scope {
+    width: fit-content;
+  }
+  .pharma-source-grid {
     grid-template-columns: 1fr;
   }
   .demo-note {
