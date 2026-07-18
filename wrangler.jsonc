@@ -11,9 +11,12 @@
       "index.html",
       "app.js",
       "scientific-library-data.js",
+      "paper-contract.js",
+      "clinical-taxonomy.js",
       "styles.css",
       "favicon.svg",
-      "dodperoformance.main"
+      "dodperoformance.main",
+      "clinico"
     ]
   },
   "assets": {
