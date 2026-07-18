@@ -19,6 +19,16 @@ jobs:
       - name: Prepare public directory
         run: sh ./scripts/prepare-public.sh
 
+      - name: Verify architecture and public package
+        run: |
+          node --check app.js
+          node --check clinico/app.js
+          node --check clinical-taxonomy.js
+          node --check paper-contract.js
+          node --check dodperoformance.main/ECG/ecg-signal.js
+          node --check dodperoformance.main/ECG/workbench.js
+          node scripts/verify-architecture.mjs --public
+
       - name: Deploy
         uses: cloudflare/wrangler-action@v3
         with:

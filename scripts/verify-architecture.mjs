@@ -30,7 +30,7 @@ defaultLibraryGroups.forEach((group) => group.topicIds.forEach((id) => {
 
 assert.equal(searchTermPairs.length, 132, "cobertura PT-BR/EN alterada");
 assert.equal(Object.keys(ptBrSearchTerms).length, 132, "alias PT-BR duplicado ou ausente");
-assert.ok(englishSearchTerms.length >= 50, "cobertura de busca em inglês reduzida");
+assert.equal(englishSearchTerms.length, 79, "cobertura de busca em inglês alterada");
 assert.equal(Object.keys(phraseTranslations).length, 51, "cobertura de frases alterada");
 assert.equal(Object.keys(wordTranslations).length, 83, "cobertura de palavras alterada");
 
@@ -52,6 +52,23 @@ const sample = createPaper({ origin: "curated", id: researchCards[0].id, title: 
 assert.equal(sample.year, null);
 assert.deepEqual(sample.authors, []);
 assert.equal(paperSourceUrl(sample), researchCards[0].source);
+
+const expectedEcgTopicIds = [
+  "ecg_measurements",
+  "ecg_rhythm",
+  "ecg_conduction_intervals",
+  "ecg_st_t_injury",
+  "ecg_overload_remodeling",
+  "ecg_ectopy_rate",
+];
+const ecgHtml = readFileSync(resolve(root, "dodperoformance.main/ECG/index.html"), "utf8");
+const ecgSignal = readFileSync(resolve(root, "dodperoformance.main/ECG/ecg-signal.js"), "utf8");
+const ecgHtmlTopicIds = [...ecgHtml.matchAll(/data-axis="(ecg_[^"]+)"/g)].map((match) => match[1]);
+assert.deepEqual(ecgHtmlTopicIds, expectedEcgTopicIds, "eixos ECG do HTML divergiram do contrato");
+expectedEcgTopicIds.forEach((id) => {
+  assert.ok(clinicalTopicsById.has(id), `eixo ECG sem ClinicalTopic: ${id}`);
+  assert.ok(ecgSignal.includes(`${id}:`), `análise ECG não produz o eixo ${id}`);
+});
 
 function verifyRelativeImports(entryFile) {
   const source = readFileSync(entryFile, "utf8");
