@@ -1,4 +1,5 @@
 import { analyzeEcgRecording, createDemoRecording, parseEcgText } from "./ecg-signal.js?v=20260617-local-signal";
+import { clinicalTopicsById } from "../../clinical-taxonomy.js";
 
 const AXIS_SELECTOR = "[data-axis]";
 
@@ -255,7 +256,7 @@ export function initEcgWorkbench() {
     const context = document.querySelector("#ecgContext").value;
     const notes = document.querySelector("#ecgNotes").value.trim();
     const axes = [...form.querySelectorAll(AXIS_SELECTOR)].map((select) => ({
-      label: select.dataset.axis,
+      label: clinicalTopicsById.get(select.dataset.axis)?.labelPtBr || select.dataset.axis,
       value: select.value,
     }));
     const flagged = axes.filter((axis) => axis.value === "Achado a revisar");

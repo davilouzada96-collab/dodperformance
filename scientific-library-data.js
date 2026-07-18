@@ -9,6 +9,7 @@ export const researchCategories = [
 export const researchCards = [
   {
     id: "action-potential",
+    clinicalTopicIds: ["action_potential"],
     category: "neuro",
     accent: "#6d5bd0",
     mark: "Na+",
@@ -30,6 +31,7 @@ export const researchCards = [
   },
   {
     id: "neural-plasticity",
+    clinicalTopicIds: ["neuroplasticity"],
     category: "neuro",
     accent: "#376a8f",
     mark: "LTP",
@@ -51,6 +53,7 @@ export const researchCards = [
   },
   {
     id: "homeostasis",
+    clinicalTopicIds: ["homeostasis"],
     category: "physio",
     accent: "#2f6f59",
     mark: "HRV",
@@ -72,6 +75,7 @@ export const researchCards = [
   },
   {
     id: "autonomic-recovery",
+    clinicalTopicIds: ["autonomic_variability", "recovery_rehabilitation"],
     category: "physio",
     accent: "#60a5fa",
     mark: "ANS",
@@ -93,6 +97,7 @@ export const researchCards = [
   },
   {
     id: "training-specificity",
+    clinicalTopicIds: ["sports_performance"],
     category: "sport",
     accent: "#b87633",
     mark: "VO2",
@@ -114,6 +119,7 @@ export const researchCards = [
   },
   {
     id: "sleep-recovery",
+    clinicalTopicIds: ["sleep_circadian", "recovery_rehabilitation"],
     category: "health",
     accent: "#394150",
     mark: "Zz",
@@ -135,6 +141,7 @@ export const researchCards = [
   },
   {
     id: "motor-learning",
+    clinicalTopicIds: ["motor_control_learning"],
     category: "neuro",
     accent: "#7c5f3f",
     mark: "REP",
@@ -156,6 +163,7 @@ export const researchCards = [
   },
   {
     id: "motor-cortex",
+    clinicalTopicIds: ["motor_control_learning"],
     category: "neuro",
     accent: "#536a9f",
     mark: "M1",
@@ -177,6 +185,7 @@ export const researchCards = [
   },
   {
     id: "proprioception",
+    clinicalTopicIds: ["proprioception_balance"],
     category: "physio",
     accent: "#3f7b6a",
     mark: "POS",
@@ -198,6 +207,7 @@ export const researchCards = [
   },
   {
     id: "pain",
+    clinicalTopicIds: ["pain"],
     category: "health",
     accent: "#8f4f4f",
     mark: "NRS",
@@ -219,6 +229,7 @@ export const researchCards = [
   },
   {
     id: "inflammation",
+    clinicalTopicIds: ["inflammation"],
     category: "physio",
     accent: "#9f5c4a",
     mark: "IL",
@@ -240,6 +251,7 @@ export const researchCards = [
   },
   {
     id: "muscle-strength",
+    clinicalTopicIds: ["strength_power"],
     category: "sport",
     accent: "#7f6231",
     mark: "1RM",
@@ -261,6 +273,7 @@ export const researchCards = [
   },
   {
     id: "muscle-fatigue",
+    clinicalTopicIds: ["fatigue"],
     category: "physio",
     accent: "#6f6f42",
     mark: "FAD",
@@ -282,6 +295,7 @@ export const researchCards = [
   },
   {
     id: "aerobic-capacity",
+    clinicalTopicIds: ["aerobic_capacity", "cardiovascular"],
     category: "sport",
     accent: "#3f6f8f",
     mark: "O2",
@@ -303,6 +317,7 @@ export const researchCards = [
   },
   {
     id: "heart-rate-variability",
+    clinicalTopicIds: ["autonomic_variability"],
     category: "physio",
     accent: "#4b7897",
     mark: "HRV",
@@ -324,6 +339,7 @@ export const researchCards = [
   },
   {
     id: "cortisol-stress",
+    clinicalTopicIds: ["stress_cortisol"],
     category: "health",
     accent: "#6a536f",
     mark: "HPA",
@@ -345,6 +361,7 @@ export const researchCards = [
   },
   {
     id: "circadian-rhythm",
+    clinicalTopicIds: ["sleep_circadian"],
     category: "health",
     accent: "#3e4f75",
     mark: "24h",
@@ -366,6 +383,7 @@ export const researchCards = [
   },
   {
     id: "nutrition-recovery",
+    clinicalTopicIds: ["nutrition", "recovery_rehabilitation"],
     category: "health",
     accent: "#64723f",
     mark: "PRO",
@@ -387,6 +405,7 @@ export const researchCards = [
   },
   {
     id: "tendon-adaptation",
+    clinicalTopicIds: ["load_adaptation", "muscle_tendon_injury"],
     category: "physio",
     accent: "#7a704a",
     mark: "TEN",
@@ -408,6 +427,7 @@ export const researchCards = [
   },
   {
     id: "balance-posture",
+    clinicalTopicIds: ["proprioception_balance"],
     category: "physio",
     accent: "#4f6f63",
     mark: "BAL",
@@ -429,6 +449,7 @@ export const researchCards = [
   },
   {
     id: "reaction-time",
+    clinicalTopicIds: ["reaction_time"],
     category: "sport",
     accent: "#5c5f8f",
     mark: "RT",
@@ -450,6 +471,7 @@ export const researchCards = [
   },
   {
     id: "executive-function",
+    clinicalTopicIds: ["executive_function"],
     category: "neuro",
     accent: "#624f86",
     mark: "EF",
@@ -471,6 +493,7 @@ export const researchCards = [
   },
   {
     id: "breathing",
+    clinicalTopicIds: ["breathing"],
     category: "physio",
     accent: "#4f7f8c",
     mark: "CO2",
@@ -492,6 +515,7 @@ export const researchCards = [
   },
   {
     id: "emergency-response",
+    clinicalTopicIds: ["emergency_care", "cardiovascular"],
     category: "health",
     accent: "#dc2626",
     mark: "SOS",

@@ -1,3 +1,15 @@
+import {
+  classifyClinicalTopicIds,
+  clinicalTopicsById,
+  defaultLibraryGroups,
+  defaultLibraryTopic,
+  englishSearchTerms as centralEnglishSearchTerms,
+  phraseTranslations as centralPhraseTranslations,
+  ptBrSearchTerms as centralPtBrSearchTerms,
+  wordTranslations as centralWordTranslations,
+} from "../clinical-taxonomy.js";
+import { createPaper, paperAuthorsText, paperSourceUrl } from "../paper-contract.js";
+
 const DATA_URL = "./output_data_1779051008.json";
 const OPENALEX_URL = "https://api.openalex.org/works";
 const PUBMED_BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
@@ -7,21 +19,9 @@ const PROJECT_STORAGE_KEY = "dodResearchProjects";
 const SEARCH_CACHE_KEY = "dodResearchCache";
 const SEARCH_CACHE_VERSION = "v2";
 const SEARCH_CACHE_TTL_MS = 1000 * 60 * 60 * 12;
-const DEFAULT_LIBRARY_TOPIC = "neuroplasticity motor learning headache emergency dizziness vertigo balance sepsis acute respiratory failure clinical assessment muscle recovery muscle strength fatigue sports performance heart rate variability sleep recovery";
-const DEFAULT_LIBRARY_TOPICS = [
-  "neuroplasticity motor learning pain inflammation muscle recovery",
-  "muscle strength fatigue sports performance",
-  "heart rate variability sleep recovery",
-  "headache emergency dizziness vertigo balance",
-  "sepsis acute respiratory failure clinical assessment",
-];
-const DEFAULT_LIBRARY_LABELS = [
-  "neuroplasticidade e recuperação",
-  "força, fadiga e performance",
-  "HRV, sono e recuperação",
-  "cefaleia, vertigem e equilíbrio",
-  "sepse e respiração aguda",
-];
+const DEFAULT_LIBRARY_TOPIC = defaultLibraryTopic;
+const DEFAULT_LIBRARY_TOPICS = defaultLibraryGroups.map((group) => group.query);
+const DEFAULT_LIBRARY_LABELS = defaultLibraryGroups.map((group) => group.label);
 
 const noisyDomains = [
   "researchgate.net",
@@ -94,194 +94,6 @@ const searchStopWords = new Set([
   "training",
 ]);
 
-const ptBrSearchTerms = {
-  "aprendizado de máquina": "machine learning",
-  "aprendizagem de máquina": "machine learning",
-  "inteligência artificial": "artificial intelligence",
-  "inteligencia artificial": "artificial intelligence",
-  "aprendizado profundo": "deep learning",
-  "saúde": "healthcare",
-  "saude": "healthcare",
-  "pediátrica": "pediatric",
-  "pediatrica": "pediatric",
-  "pediátrico": "pediatric",
-  "pediatrico": "pediatric",
-  "crianças": "children",
-  "criancas": "children",
-  "criança": "child",
-  "crianca": "child",
-  "adultos": "adult",
-  "idosos": "elderly",
-  "emergência": "emergency",
-  "emergencia": "emergency",
-  "pronto socorro": "emergency department",
-  "cefaleia": "headache",
-  "cefaleias": "headache disorders",
-  "dor de cabeça": "headache",
-  "dor de cabeca": "headache",
-  "enxaqueca": "migraine",
-  "migrânea": "migraine",
-  "migranea": "migraine",
-  "tontura": "dizziness",
-  "vertigem": "vertigo",
-  "vestibular": "vestibular disorders",
-  "terapia intensiva": "intensive care",
-  "uti": "intensive care unit",
-  "sepse": "sepsis",
-  "choque séptico": "septic shock",
-  "choque septico": "septic shock",
-  "insuficiência respiratória aguda": "acute respiratory failure",
-  "insuficiencia respiratoria aguda": "acute respiratory failure",
-  "falência respiratória aguda": "acute respiratory failure",
-  "falencia respiratoria aguda": "acute respiratory failure",
-  "falha respiratória aguda": "acute respiratory failure",
-  "falha respiratoria aguda": "acute respiratory failure",
-  "suporte respiratório": "respiratory support",
-  "suporte respiratorio": "respiratory support",
-  "diagnóstico": "diagnosis",
-  "diagnostico": "diagnosis",
-  "acurácia": "accuracy",
-  "acuracia": "accuracy",
-  "triagem": "triage",
-  "avaliação": "assessment",
-  "avaliacao": "assessment",
-  "avaliação neurológica": "neurological assessment",
-  "avaliacao neurologica": "neurological assessment",
-  "metas de avaliação": "assessment targets",
-  "metas de avaliacao": "assessment targets",
-  "estratificação de risco": "risk stratification",
-  "estratificacao de risco": "risk stratification",
-  "mortalidade": "mortality",
-  "sobrevida": "survival",
-  "prognóstico": "prognosis",
-  "prognostico": "prognosis",
-  "tratamento": "treatment",
-  "rastreamento": "screening",
-  "prevenção": "prevention",
-  "prevencao": "prevention",
-  "risco": "risk",
-  "predição": "prediction",
-  "predicao": "prediction",
-  "doença": "disease",
-  "doenca": "disease",
-  "cardiovascular": "cardiovascular",
-  "diabetes": "diabetes",
-  "asma": "asthma",
-  "avc": "stroke",
-  "derrame": "stroke",
-  "cuidado usual": "standard care",
-  "carga": "load",
-  "carga de treino": "training load",
-  "carga de treinamento": "training load",
-  "lesão muscular": "muscle injury",
-  "lesao muscular": "muscle injury",
-  "reabilitação": "rehabilitation",
-  "reabilitacao": "rehabilitation",
-  "neuroplasticidade": "neuroplasticity",
-  "plasticidade neural": "neural plasticity",
-  "aprendizagem motora": "motor learning",
-  "aprendizado motor": "motor learning",
-  "controle motor": "motor control",
-  "córtex motor": "motor cortex",
-  "cortex motor": "motor cortex",
-  "propriocepção": "proprioception",
-  "propriocepcao": "proprioception",
-  "dor": "pain",
-  "inflamação": "inflammation",
-  "inflamacao": "inflammation",
-  "recuperação": "recovery",
-  "recuperacao": "recovery",
-  "recuperação muscular": "muscle recovery",
-  "recuperacao muscular": "muscle recovery",
-  "força": "strength",
-  "forca": "strength",
-  "força muscular": "muscle strength",
-  "forca muscular": "muscle strength",
-  "potência": "power",
-  "potencia": "power",
-  "fadiga": "fatigue",
-  "fadiga neuromuscular": "neuromuscular fatigue",
-  "performance esportiva": "sports performance",
-  "esporte": "sport",
-  "treino": "training",
-  "treinamento": "training",
-  "variabilidade da frequência cardíaca": "heart rate variability",
-  "variabilidade da frequencia cardiaca": "heart rate variability",
-  "frequência cardíaca": "heart rate",
-  "frequencia cardiaca": "heart rate",
-  "sono": "sleep",
-  "ritmo circadiano": "circadian rhythm",
-  "estresse": "stress",
-  "stress": "stress",
-  "cortisol": "cortisol",
-  "nutrição": "nutrition",
-  "nutricao": "nutrition",
-  "proteína": "protein",
-  "proteina": "protein",
-  "tendão": "tendon",
-  "tendao": "tendon",
-  "equilíbrio": "balance",
-  "equilibrio": "balance",
-  "postura": "posture",
-  "respiração": "breathing",
-  "respiracao": "breathing",
-  "sistema nervoso autonômico": "autonomic nervous system",
-  "sistema nervoso autonomico": "autonomic nervous system",
-};
-
-const englishSearchTerms = [
-  "artificial intelligence",
-  "acute respiratory failure",
-  "assessment",
-  "assessment targets",
-  "autonomic nervous system",
-  "balance",
-  "breathing",
-  "children",
-  "circadian rhythm",
-  "cortisol",
-  "deep learning",
-  "fatigue",
-  "dizziness",
-  "emergency department",
-  "heart rate",
-  "heart rate variability",
-  "headache",
-  "headache disorders",
-  "inflammation",
-  "machine learning",
-  "migraine",
-  "motor control",
-  "motor cortex",
-  "motor learning",
-  "muscle injury",
-  "muscle recovery",
-  "muscle strength",
-  "neuroplasticity",
-  "nutrition",
-  "pain",
-  "pediatric",
-  "posture",
-  "power",
-  "proprioception",
-  "recovery",
-  "rehabilitation",
-  "sepsis",
-  "respiratory support",
-  "risk stratification",
-  "sleep",
-  "sport",
-  "sports performance",
-  "strength",
-  "stress",
-  "training load",
-  "training",
-  "triage",
-  "vertigo",
-  "vestibular disorders",
-  "load",
-];
-
 const ptBrUiTerms = {
   guideline: "diretriz",
   "systematic-review": "revisão sistemática",
@@ -293,177 +105,6 @@ const ptBrUiTerms = {
   book: "livro",
   other: "outro",
 };
-
-const ptBrPhraseTranslations = {
-  "acute lung injury": "lesão pulmonar aguda",
-  "acute respiratory failure": "insuficiência respiratória aguda",
-  "adverse events": "eventos adversos",
-  "artificial intelligence": "inteligência artificial",
-  "autonomic nervous system": "sistema nervoso autonômico",
-  "bloodstream infection": "infecção de corrente sanguínea",
-  "cardiorespiratory fitness": "aptidão cardiorrespiratória",
-  "chronic pain": "dor crônica",
-  "clinical trial": "ensaio clínico",
-  "clinical assessment": "avaliação clínica",
-  "concussion in sport": "concussão no esporte",
-  "critical care": "cuidados críticos",
-  "daily prediction": "predição diária",
-  "deep learning": "aprendizado profundo",
-  "diagnostic accuracy": "acurácia diagnóstica",
-  "dizziness and vertigo": "tontura e vertigem",
-  "early diagnosis": "diagnóstico precoce",
-  "emergency department": "pronto atendimento",
-  "exercise training": "treinamento físico",
-  "training load": "carga de treinamento",
-  "headache disorders": "transtornos de cefaleia",
-  "heart rate variability": "variabilidade da frequência cardíaca",
-  "intensive care unit": "unidade de terapia intensiva",
-  "machine learning": "aprendizado de máquina",
-  "meta-analysis": "meta-análise",
-  "motor control": "controle motor",
-  "motor cortex": "córtex motor",
-  "motor learning": "aprendizagem motora",
-  "muscle injury": "lesão muscular",
-  "muscle recovery": "recuperação muscular",
-  "muscle strength": "força muscular",
-  "neural plasticity": "plasticidade neural",
-  "neurological assessment": "avaliação neurológica",
-  "neurological emergency": "emergência neurológica",
-  "night shifts": "turnos noturnos",
-  "open access": "acesso aberto",
-  "pediatric acute lung injury": "lesão pulmonar aguda pediátrica",
-  "pediatric sepsis": "sepse pediátrica",
-  "physical activity": "atividade física",
-  "randomized controlled trial": "ensaio clínico randomizado",
-  "recovery days": "dias de recuperação",
-  "respiratory support": "suporte respiratório",
-  "risk stratification": "estratificação de risco",
-  "scoping review": "revisão de escopo",
-  "septic shock": "choque séptico",
-  "sport performance": "performance esportiva",
-  "sports performance": "performance esportiva",
-  "supervised machine learning": "aprendizado de máquina supervisionado",
-  "systematic review": "revisão sistemática",
-  "tendon load adaptation": "adaptação do tendão à carga",
-  "vestibular disorders": "distúrbios vestibulares",
-};
-
-const ptBrWordTranslations = {
-  accuracy: "acurácia",
-  acute: "agudo",
-  adaptation: "adaptação",
-  adult: "adulto",
-  analysis: "análise",
-  analytics: "análise de dados",
-  application: "aplicação",
-  assessment: "avaliação",
-  associated: "associado",
-  balance: "equilíbrio",
-  biomarker: "biomarcador",
-  biomarkers: "biomarcadores",
-  blood: "sangue",
-  body: "corpo",
-  brain: "cérebro",
-  care: "cuidado",
-  cardiac: "cardíaco",
-  cardiovascular: "cardiovascular",
-  children: "crianças",
-  clinical: "clínico",
-  cohort: "coorte",
-  consensus: "consenso",
-  control: "controle",
-  controlled: "controlado",
-  cortisol: "cortisol",
-  data: "dados",
-  diagnosis: "diagnóstico",
-  diagnostic: "diagnóstico",
-  disease: "doença",
-  dizziness: "tontura",
-  early: "precoce",
-  emergency: "emergência",
-  exercise: "exercício",
-  failure: "falência",
-  fatigue: "fadiga",
-  fitness: "aptidão",
-  frequency: "frequência",
-  health: "saúde",
-  healthcare: "saúde",
-  headache: "cefaleia",
-  headaches: "cefaleias",
-  inflammation: "inflamação",
-  injury: "lesão",
-  learning: "aprendizado",
-  load: "carga",
-  model: "modelo",
-  mortality: "mortalidade",
-  migraine: "enxaqueca",
-  neural: "neural",
-  nervous: "nervoso",
-  neuroplasticity: "neuroplasticidade",
-  nutrition: "nutrição",
-  pain: "dor",
-  patients: "pacientes",
-  pediatric: "pediátrico",
-  performance: "performance",
-  physical: "físico",
-  prediction: "predição",
-  prognosis: "prognóstico",
-  protein: "proteína",
-  recovery: "recuperação",
-  rehabilitation: "reabilitação",
-  response: "resposta",
-  respiratory: "respiratório",
-  review: "revisão",
-  risk: "risco",
-  sepsis: "sepse",
-  sleep: "sono",
-  sport: "esporte",
-  strength: "força",
-  stress: "estresse",
-  study: "estudo",
-  autonomic: "autonômico",
-  systematic: "sistemática",
-  target: "meta",
-  targets: "metas",
-  tendon: "tendão",
-  training: "treinamento",
-  trial: "ensaio",
-  triage: "triagem",
-  variability: "variabilidade",
-  vertigo: "vertigem",
-  vestibular: "vestibular",
-};
-
-const ptBrConceptCatalog = [
-  { terms: ["machine learning", "supervised machine learning"], label: "aprendizado de máquina" },
-  { terms: ["artificial intelligence", "deep learning"], label: "inteligência artificial" },
-  { terms: ["pediatric", "children", "child"], label: "saúde pediátrica" },
-  { terms: ["critical care", "intensive care unit"], label: "cuidados críticos" },
-  { terms: ["acute lung injury"], label: "lesão pulmonar aguda" },
-  { terms: ["acute respiratory failure", "respiratory failure", "respiratory support"], label: "insuficiência respiratória aguda" },
-  { terms: ["sepsis", "septic shock"], label: "sepse" },
-  { terms: ["headache", "headache disorders", "migraine"], label: "cefaleia e enxaqueca" },
-  { terms: ["dizziness", "vertigo", "vestibular disorders"], label: "tontura, vertigem e equilíbrio" },
-  { terms: ["heart rate variability", "autonomic nervous system"], label: "variabilidade cardíaca e sistema autonômico" },
-  { terms: ["sleep", "circadian rhythm"], label: "sono e ritmo circadiano" },
-  { terms: ["recovery", "muscle recovery", "rehabilitation"], label: "recuperação e reabilitação" },
-  { terms: ["pain", "chronic pain"], label: "dor" },
-  { terms: ["inflammation"], label: "inflamação" },
-  { terms: ["motor learning", "motor control", "motor cortex"], label: "controle e aprendizagem motora" },
-  { terms: ["neuroplasticity", "neural plasticity"], label: "neuroplasticidade" },
-  { terms: ["proprioception", "balance", "posture"], label: "propriocepção e equilíbrio" },
-  { terms: ["strength", "muscle strength", "power"], label: "força e potência" },
-  { terms: ["training load", "load", "tendon load adaptation"], label: "carga e adaptação" },
-  { terms: ["muscle injury", "tendon"], label: "lesão muscular e tendão" },
-  { terms: ["fatigue", "neuromuscular fatigue"], label: "fadiga" },
-  { terms: ["sport", "sports performance", "exercise training"], label: "performance esportiva" },
-  { terms: ["nutrition", "protein"], label: "nutrição" },
-  { terms: ["breathing", "ventilation"], label: "respiração" },
-  { terms: ["cortisol", "stress"], label: "estresse e cortisol" },
-  { terms: ["diagnosis", "early diagnosis", "diagnostic accuracy"], label: "diagnóstico" },
-  { terms: ["assessment", "clinical assessment", "neurological assessment", "assessment targets", "triage", "risk stratification"], label: "avaliação clínica e estratificação de risco" },
-  { terms: ["prediction", "risk", "prognosis"], label: "predição de risco" },
-];
 
 const state = {
   papers: [],
@@ -639,7 +280,7 @@ function translateScientificText(value, maxLength = 520) {
   if (!original) return "";
 
   let translated = original;
-  Object.entries(ptBrPhraseTranslations)
+  Object.entries(centralPhraseTranslations)
     .sort((a, b) => b[0].length - a[0].length)
     .forEach(([en, pt]) => {
       translated = translated.replace(new RegExp(escapeRegExp(en), "gi"), pt);
@@ -647,7 +288,7 @@ function translateScientificText(value, maxLength = 520) {
 
   translated = translated.replace(/\b[A-Za-z][A-Za-z-]*\b/g, (word) => {
     const lower = word.toLowerCase();
-    return ptBrWordTranslations[lower] || word;
+    return centralWordTranslations[lower] || word;
   });
 
   translated = translated
@@ -712,11 +353,11 @@ function uniqueConcepts(labels, max) {
 }
 
 function getPaperConcepts(paper, max = 3) {
-  const text = normalizeText(`${paper.title || ""} ${paper.abstract || ""} ${(paper.meshTerms || []).join(" ")}`);
   const originLabel = paper.libraryTopicLabel || "";
-  const concepts = ptBrConceptCatalog
-    .filter((concept) => concept.terms.some((term) => text.includes(normalizeText(term))))
-    .map((concept) => concept.label);
+  const ids = paper.clinicalTopicIds?.length
+    ? paper.clinicalTopicIds
+    : classifyClinicalTopicIds([paper.title, paper.abstract, ...(paper.meshTerms || [])]);
+  const concepts = ids.map((id) => clinicalTopicsById.get(id)?.labelPtBr).filter(Boolean);
   return uniqueConcepts([originLabel, ...concepts], max);
 }
 
@@ -760,10 +401,10 @@ function expandPortugueseQuery(topic) {
   if (/\bOR\b|\(|\)/i.test(topic)) return topic;
   const normalized = normalizeText(topic);
   const additions = new Set();
-  Object.entries(ptBrSearchTerms).sort((a, b) => b[0].length - a[0].length).forEach(([pt, en]) => {
+  Object.entries(centralPtBrSearchTerms).sort((a, b) => b[0].length - a[0].length).forEach(([pt, en]) => {
     if (normalized.includes(normalizeText(pt))) additions.add(en);
   });
-  englishSearchTerms.forEach((term) => {
+  centralEnglishSearchTerms.forEach((term) => {
     if (normalized.includes(normalizeText(term))) additions.add(term);
   });
   if (additions.size) return [...additions].join(" ");
@@ -772,7 +413,7 @@ function expandPortugueseQuery(topic) {
 
 function getSearchTerms(query) {
   const normalized = normalizeText(query);
-  const phrases = englishSearchTerms.filter((term) => normalized.includes(normalizeText(term)));
+  const phrases = centralEnglishSearchTerms.filter((term) => normalized.includes(normalizeText(term)));
   const tokens = normalized
     .split(/\s+/)
     .map((term) => term.replace(/[^a-z0-9-]/g, ""))
@@ -853,18 +494,11 @@ function rankDefaultLibraryPapers(papers, expandedTopics) {
 }
 
 function labelEvidence(type) {
-  return ptBrUiTerms[type] || type;
+  return ptBrUiTerms[type] || "não classificado";
 }
 
 function bestSourceUrl(paper) {
-  if (paper.pmid) {
-    const pmid = String(paper.pmid).replace("https://pubmed.ncbi.nlm.nih.gov/", "").replace(/\//g, "");
-    return `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
-  }
-  if (paper.doi) {
-    return paper.doi.startsWith("http") ? paper.doi : `https://doi.org/${paper.doi}`;
-  }
-  return paper.url || "#";
+  return paperSourceUrl(paper);
 }
 
 function accessLabel(paper) {
@@ -916,15 +550,18 @@ function scorePaper(paper) {
 }
 
 function enrichPaper(paper) {
-  const domain = paper.domainOverride || getDomain(paper.url);
+  const domain = paper.domainOverride || getDomain(paper.sourceUrl);
   const sourceText = `${domain} ${paper.journal || ""} ${paper.publisher || ""}`.toLowerCase();
   const normalized = {
     ...paper,
+    clinicalTopicIds: paper.clinicalTopicIds?.length
+      ? paper.clinicalTopicIds
+      : classifyClinicalTopicIds([paper.title, paper.abstract, ...(paper.meshTerms || [])]),
     domain,
     isNoisy:
       noisyDomains.some((item) => domain.includes(item)) ||
-      /\.pdf($|\?)/i.test(paper.url || "") ||
-      /\/download\//i.test(paper.url || ""),
+      /\.pdf($|\?)/i.test(paper.sourceUrl || "") ||
+      /\/download\//i.test(paper.sourceUrl || ""),
     isPreferred:
       preferredDomains.some((item) => sourceText.includes(item)) ||
       preferredSourceNames.some((item) => sourceText.includes(item)),
@@ -934,20 +571,21 @@ function enrichPaper(paper) {
 }
 
 function normalizeLocalPaper(paper) {
-  return enrichPaper({
+  return enrichPaper(createPaper({
+    origin: "local",
     title: paper.paper_title || "Título não identificado",
-    authors: paper.authors || "Autores não identificados",
+    authors: paper.authors ? String(paper.authors).split(/,\s*/) : [],
     year: Number(paper.publication_year) || null,
-    journal: paper.journal_name && paper.journal_name !== "null" ? paper.journal_name : "Fonte não identificada",
-    citations: Number(paper.citation_count) || 0,
-    url: paper.url || "#",
+    journal: paper.journal_name && paper.journal_name !== "null" ? paper.journal_name : null,
+    citations: paper.citation_count === null || paper.citation_count === undefined || paper.citation_count === "" ? null : Number(paper.citation_count),
+    sourceUrl: paper.url || null,
     doi: "",
     pmid: "",
     abstract: "",
     source: "BrowserAct JSON",
     evidenceType: titleCaseEvidence("article", paper.paper_title),
-    isOpenAccess: false,
-  });
+    isOpenAccess: null,
+  }));
 }
 
 function normalizeOpenAlexWork(work) {
@@ -960,14 +598,14 @@ function normalizeOpenAlexWork(work) {
     .filter(Boolean)
     .join(", ");
 
-  return enrichPaper({
+  return enrichPaper({ ...createPaper({
+    origin: "openalex",
     title: work.display_name || "Título não identificado",
-    authors: authors || "Autores não identificados",
+    authors: authors ? authors.split(", ") : [],
     year: Number(work.publication_year) || null,
-    journal: source.display_name || "Fonte não identificada",
-    citations: Number(work.cited_by_count) || 0,
-    url,
-    domainOverride: source.host_organization_name || source.display_name || "",
+    journal: source.display_name || null,
+    citations: Number.isFinite(work.cited_by_count) ? work.cited_by_count : null,
+    sourceUrl: url,
     publisher: (source.host_organization_lineage_names || []).join(", "),
     doi: work.doi || "",
     pmid: work.ids?.pmid || "",
@@ -975,13 +613,13 @@ function normalizeOpenAlexWork(work) {
     source: "OpenAlex",
     evidenceType: titleCaseEvidence(work.type, work.display_name),
     isOpenAccess: Boolean(work.open_access?.is_oa),
-  });
+  }), domainOverride: source.host_organization_name || source.display_name || "" });
 }
 
 function normalizePubMedArticle(article) {
   const pmid = textFrom(article, "MedlineCitation > PMID");
   const title = textFrom(article, "ArticleTitle") || "Título não identificado";
-  const journal = textFrom(article, "Journal > Title") || textFrom(article, "ISOAbbreviation") || "PubMed";
+  const journal = textFrom(article, "Journal > Title") || textFrom(article, "ISOAbbreviation") || null;
   const year =
     Number(textFrom(article, "JournalIssue PubDate Year")) ||
     Number(textFrom(article, "ArticleDate Year")) ||
@@ -1003,23 +641,23 @@ function normalizePubMedArticle(article) {
   const publicationTypes = allTextFrom(article, "PublicationTypeList PublicationType");
   const meshTerms = allTextFrom(article, "MeshHeading DescriptorName").slice(0, 8);
 
-  return enrichPaper({
+  return enrichPaper({ ...createPaper({
+    origin: "pubmed",
     title,
-    authors: authorNames || "Autores não identificados",
+    authors: authorNames ? authorNames.split(", ") : [],
     year,
     journal,
-    citations: 0,
-    url: pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}/` : doi ? `https://doi.org/${doi}` : "#",
-    domainOverride: "PubMed",
+    citations: null,
+    sourceUrl: pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}/` : doi ? `https://doi.org/${doi}` : null,
     doi: doi ? `10.${doi.split("10.")[1] || doi}` : "",
     pmid,
     abstract,
     source: "PubMed",
     publisher: "NCBI",
     evidenceType: titleCaseEvidence(publicationTypes.join(" "), title),
-    isOpenAccess: false,
+    isOpenAccess: null,
     meshTerms,
-  });
+  }), domainOverride: "PubMed" });
 }
 
 function dedupePapers(papers) {
@@ -1035,16 +673,16 @@ function dedupePapers(papers) {
       ...previous,
       ...paper,
       title: previous.title.length >= paper.title.length ? previous.title : paper.title,
-      authors: previous.authors !== "Autores não identificados" ? previous.authors : paper.authors,
+      authors: previous.authors.length ? previous.authors : paper.authors,
       year: previous.year || paper.year,
-      journal: previous.journal !== "Fonte não identificada" ? previous.journal : paper.journal,
-      citations: Math.max(previous.citations, paper.citations),
-      url: previous.url !== "#" ? previous.url : paper.url,
+      journal: previous.journal || paper.journal,
+      citations: Math.max(previous.citations ?? -1, paper.citations ?? -1) >= 0 ? Math.max(previous.citations ?? -1, paper.citations ?? -1) : null,
+      sourceUrl: previous.sourceUrl || paper.sourceUrl,
       doi: previous.doi || paper.doi,
       pmid: previous.pmid || paper.pmid,
-      abstract: previous.abstract.length >= paper.abstract.length ? previous.abstract : paper.abstract,
+      abstract: (previous.abstract || "").length >= (paper.abstract || "").length ? previous.abstract : paper.abstract,
       source: previous.source === paper.source ? previous.source : `${previous.source} + ${paper.source}`,
-      isOpenAccess: previous.isOpenAccess || paper.isOpenAccess,
+      isOpenAccess: previous.isOpenAccess ?? paper.isOpenAccess,
       meshTerms: [...new Set([...(previous.meshTerms || []), ...(paper.meshTerms || [])])],
     });
     seen.set(key, merged);
@@ -1564,7 +1202,7 @@ function openReader(paper) {
   const trace = [
     paper.doi ? `DOI: ${paper.doi.replace("https://doi.org/", "")}` : "",
     paper.pmid ? `PMID: ${String(paper.pmid).replace(/\D/g, "")}` : "",
-    `${paper.citations || 0} citações`,
+    paper.citations === null ? "citações não informadas" : `${paper.citations} citações`,
     `score ${paper.score}`,
   ].filter(Boolean);
 
@@ -1580,7 +1218,7 @@ function openReader(paper) {
   els.readerAbstract.textContent = buildPtBrSummary(paper, 900);
   els.readerSource.textContent = [paper.journal, paper.year || "ano não informado"].filter(Boolean).join(" • ");
   els.readerTrace.textContent = trace.join(" • ") || "Metadado mínimo disponível.";
-  els.readerAuthors.textContent = paper.authors || "Autores não identificados";
+  els.readerAuthors.textContent = paperAuthorsText(paper) || "Autores não identificados";
   els.readerSourceLink.href = href;
   els.readerCopy.onclick = async () => {
     const reference = formatVancouver(paper);
@@ -1720,10 +1358,10 @@ function exportData(type) {
   }
 
   if (type === "csv") {
-    const columns = ["title", "authors", "year", "journal", "citations", "score", "evidenceType", "doi", "pmid", "url"];
+    const columns = ["title", "authors", "year", "journal", "citations", "score", "evidenceType", "doi", "pmid", "sourceUrl"];
     const rows = filtered.map((paper) =>
       columns
-        .map((column) => `"${String(column === "url" ? bestSourceUrl(paper) : paper[column] ?? "").replace(/"/g, '""')}"`)
+        .map((column) => `"${String(column === "sourceUrl" ? bestSourceUrl(paper) : paper[column] ?? "").replace(/"/g, '""')}"`)
         .join(",")
     );
     downloadFile(`dod-research-${Date.now()}.csv`, [columns.join(","), ...rows].join("\n"), "text/csv");
@@ -1788,7 +1426,7 @@ ${top}
 }
 
 function formatVancouver(paper) {
-  const authors = paper.authors === "Autores não identificados" ? "" : `${paper.authors}. `;
+  const authors = paperAuthorsText(paper) ? `${paperAuthorsText(paper)}. ` : "";
   const year = paper.year ? `${paper.year};` : "";
   const doi = paper.doi ? ` doi: ${paper.doi.replace("https://doi.org/", "")}.` : "";
   const pmid = paper.pmid ? ` PMID: ${paper.pmid.replace("https://pubmed.ncbi.nlm.nih.gov/", "").replace("/", "")}.` : "";
