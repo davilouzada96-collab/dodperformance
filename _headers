@@ -1,5 +1,0 @@
-/ai-ecg-risco-cardioembolico/*
-  Cache-Control: public, max-age=0, must-revalidate
-
-/assets/css/pages/ai-ecg.css
-  Cache-Control: public, max-age=300, must-revalidate
