@@ -1,5 +1,6 @@
 # ==============================================================
 # clinico-gate — configuração do Worker de verificação
+# LEGADO: não implantar. Consulte README_DEPLOY.md.
 # ==============================================================
 name = "clinico-gate"
 main = "clinico-gate.js"

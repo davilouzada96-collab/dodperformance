@@ -1,0 +1,59 @@
+name: Validate and deploy Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install development tools
+        run: npm ci
+
+      - name: Validate and build public package
+        run: npm run validate
+
+      - name: Store validated package
+        uses: actions/upload-artifact@v4
+        with:
+          name: dodperformance-public
+          path: public
+          if-no-files-found: error
+          retention-days: 7
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - name: Download validated package
+        uses: actions/download-artifact@v4
+        with:
+          name: dodperformance-public
+          path: public
+
+      - name: Deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: 05ef119cae7ef4dc98ff6f50bb6becc5
+          command: pages deploy public --project-name=dodperformance --branch=main
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

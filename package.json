@@ -1,0 +1,21 @@
+{
+  "name": "dodperformance",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "sh ./scripts/prepare-public.sh",
+    "dev": "node ./node_modules/wrangler/bin/wrangler.js dev --local --live-reload",
+    "check:syntax": "node ./scripts/check-syntax.mjs",
+    "check:architecture": "node ./scripts/verify-architecture.mjs",
+    "check:public": "node ./scripts/verify-architecture.mjs --public",
+    "validate": "npm run check:syntax && npm run check:architecture && npm run build && npm run check:public",
+    "test": "npm run validate"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "wrangler": "^4.112.0"
+  }
+}

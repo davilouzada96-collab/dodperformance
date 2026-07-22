@@ -1,0 +1,32 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dodperformance",
+  "compatibility_date": "2026-07-14",
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "build": {
+    "command": "npm run build",
+    "watch_dir": [
+      "index.html",
+      "app.js",
+      "scientific-library-data.js",
+      "paper-contract.js",
+      "clinical-taxonomy.js",
+      "styles.css",
+      "favicon.svg",
+      "_headers",
+      "dodperoformance.main",
+      "clinico",
+      "scripts",
+      "package.json"
+    ]
+  },
+  "assets": {
+    "directory": "./public"
+  },
+  "compatibility_flags": [
+    "nodejs_compat"
+  ]
+}

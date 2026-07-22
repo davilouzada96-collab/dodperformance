@@ -2,6 +2,9 @@
  * DOD Performance - Clinico Gate Worker
  * Cloudflare Worker para autenticação e gestão de acesso ao portão clínico
  * Com integração Resend API e validação de ID do paciente
+ *
+ * @deprecated Artefato histórico incompatível com o frontend atual.
+ * Não implantar. Consulte README_DEPLOY.md.
  */
 
 addEventListener('fetch', event => {
