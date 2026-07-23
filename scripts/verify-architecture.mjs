@@ -54,12 +54,14 @@ assert.deepEqual(sample.authors, []);
 assert.equal(paperSourceUrl(sample), researchCards[0].source);
 
 const expectedEcgTopicIds = [
-  "ecg_measurements",
+  "ecg_technical",
+  "ecg_rate_regularity",
   "ecg_rhythm",
+  "ecg_axis",
   "ecg_conduction_intervals",
+  "ecg_qrs_morphology",
   "ecg_st_t_injury",
   "ecg_overload_remodeling",
-  "ecg_ectopy_rate",
 ];
 const ecgHtml = readFileSync(resolve(root, "dodperoformance.main/ECG/index.html"), "utf8");
 const ecgSignal = readFileSync(resolve(root, "dodperoformance.main/ECG/ecg-signal.js"), "utf8");

@@ -1,4 +1,4 @@
-import { analyzeEcgRecording, createDemoRecording, parseEcgText } from "./ecg-signal.js?v=20260617-local-signal";
+import { analyzeEcgRecording, createDemoRecording, parseEcgText } from "./ecg-signal.js?v=20260722-academic-reading";
 import { clinicalTopicsById } from "../../clinical-taxonomy.js";
 
 const AXIS_SELECTOR = "[data-axis]";
@@ -83,6 +83,7 @@ export function initEcgWorkbench() {
   const analysisMetrics = document.querySelector("#ecgAnalysisMetrics");
   const analysisFindings = document.querySelector("#ecgAnalysisFindings");
   const form = document.querySelector("#ecgAxisForm");
+  const manualRateInput = document.querySelector("#ecgRateManual");
   const summary = document.querySelector("#ecgSummary");
   const summaryText = document.querySelector("#ecgSummaryText");
   const copyButton = document.querySelector("#ecgCopySummary");
@@ -225,8 +226,12 @@ export function initEcgWorkbench() {
 
     form.querySelectorAll(AXIS_SELECTOR).forEach((select) => {
       const automaticValue = result.automaticAxes[select.dataset.axis];
-      if (automaticValue) select.value = automaticValue;
+      if (automaticValue && select.value === "Não avaliado") select.value = automaticValue;
     });
+
+    if (manualRateInput && !manualRateInput.value && result.rate !== null) {
+      manualRateInput.value = String(result.rate);
+    }
 
     renderSignalPreview(currentRecording, currentFileLabel, result.peaks);
     analysis.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -255,11 +260,27 @@ export function initEcgWorkbench() {
     const recordType = document.querySelector("#ecgRecordType").value;
     const context = document.querySelector("#ecgContext").value;
     const notes = document.querySelector("#ecgNotes").value.trim();
+    const axisNotes = new Map([...form.querySelectorAll("[data-axis-note]")].map((input) => [
+      input.dataset.axisNote,
+      input.value.trim(),
+    ]));
+    const measurements = [...form.querySelectorAll("[data-measure]")].map((input) => {
+      const rawValue = input.value.trim();
+      const displayValue = !rawValue
+        ? "não informado"
+        : input.tagName === "SELECT"
+          ? input.selectedOptions[0].textContent
+          : `${rawValue}${input.dataset.measureUnit ? ` ${input.dataset.measureUnit}` : ""}`;
+      return { label: input.dataset.measureLabel, value: displayValue };
+    });
     const axes = [...form.querySelectorAll(AXIS_SELECTOR)].map((select) => ({
-      label: clinicalTopicsById.get(select.dataset.axis)?.labelPtBr || select.dataset.axis,
+      id: select.dataset.axis,
+      label: select.dataset.axisLabel || clinicalTopicsById.get(select.dataset.axis)?.labelPtBr || select.dataset.axis,
       value: select.value,
+      evidence: axisNotes.get(select.dataset.axis) || "não registrada",
     }));
-    const flagged = axes.filter((axis) => axis.value === "Achado a revisar");
+    const flagged = axes.filter((axis) => axis.value === "Revisado — achado presente");
+    const limited = axes.filter((axis) => axis.value === "Limitado / inconclusivo");
     const notAssessed = axes.filter((axis) => axis.value === "Não avaliado");
     const automaticBlock = currentAnalysis ? [
       "",
@@ -281,12 +302,16 @@ export function initEcgWorkbench() {
       `Contexto: ${context}`,
       ...automaticBlock,
       "",
-      "EIXOS DE REVISÃO",
-      ...axes.map((axis) => `- ${axis.label}: ${axis.value}.`),
+      "MEDIDAS E CONDIÇÕES DO REGISTRO",
+      ...measurements.map((measurement) => `- ${measurement.label}: ${measurement.value}.`),
       "",
-      `Achados marcados para revisão: ${flagged.length ? flagged.map((axis) => axis.label).join(", ") : "nenhum"}.`,
+      "LEITURA POR EIXOS",
+      ...axes.map((axis) => `- ${axis.label}: ${axis.value}. Evidência: ${axis.evidence}.`),
+      "",
+      `Eixos com achado presente: ${flagged.length ? flagged.map((axis) => axis.label).join(", ") : "nenhum"}.`,
+      `Eixos limitados ou inconclusivos: ${limited.length ? limited.map((axis) => axis.label).join(", ") : "nenhum"}.`,
       `Eixos não avaliados: ${notAssessed.length ? notAssessed.map((axis) => axis.label).join(", ") : "nenhum"}.`,
-      notes ? `Observações: ${notes}` : "Observações: não informadas.",
+      notes ? `Síntese acadêmica e comparação: ${notes}` : "Síntese acadêmica e comparação: não informadas.",
       "",
       "Limites: análise acadêmica e experimental. As medidas automáticas dependem da qualidade, da amostragem e da derivação escolhida. O resultado não confirma diagnóstico, não estima sozinho risco de AVC, não indica tratamento e exige revisão do traçado por profissional habilitado.",
     ].join("\n");

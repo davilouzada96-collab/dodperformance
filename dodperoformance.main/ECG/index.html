@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="./tokens.css" />
   <link rel="stylesheet" href="./layout.css" />
   <link rel="stylesheet" href="./components.css" />
-  <link rel="stylesheet" href="./ai-ecg.css?v=20260630-workbench-nav" />
+  <link rel="stylesheet" href="./ai-ecg.css?v=20260722-academic-reading" />
   <style>
     .dod-ai-ecg__video-scene {
       position: relative;
@@ -187,7 +187,7 @@
       .dod-ai-ecg__video-markers strong { display: inline; margin-right: 8px; }
     }
   </style>
-  <script type="module" src="./main.js?v=20260621-reading-modes"></script>
+  <script type="module" src="./main.js?v=20260722-academic-reading"></script>
 </head>
 <body>
   <header class="site-header">
@@ -204,6 +204,7 @@
       </button>
 
       <nav class="site-nav" id="site-nav" aria-label="Navegação principal" data-site-nav>
+        <a href="#protocolo-leitura">Protocolo</a>
         <a href="#bancada-ecg">Bancada ECG</a>
         <a href="#modos-leitura">Modos de leitura</a>
         <a href="#nota-clinica">Nota clínica</a>
@@ -226,6 +227,15 @@
             Um ECG isolado não confirma trombo, não exclui fibrilação paroxística e não calcula
             sozinho a probabilidade de AVC.
           </p>
+
+          <ol class="ecg-academic-protocol" id="protocolo-leitura" aria-label="Sequência mínima da leitura acadêmica do ECG">
+            <li><strong>01 · Validar</strong><span>Identificação, derivações, calibração e qualidade técnica.</span></li>
+            <li><strong>02 · Medir</strong><span>Frequência, eixo, PR, QRS e QT/QTc.</span></li>
+            <li><strong>03 · Reconhecer</strong><span>Ritmo, atividade atrial, condução e morfologia.</span></li>
+            <li><strong>04 · Localizar</strong><span>Distribuição de QRS, ST e T por derivações contíguas.</span></li>
+            <li><strong>05 · Comparar</strong><span>ECG prévio, sintomas, momento clínico e exames associados.</span></li>
+            <li><strong>06 · Sintetizar</strong><span>Achado, hipótese, prioridade e limites da interpretação.</span></li>
+          </ol>
         </div>
 
         <section class="ecg-workbench" id="bancada-ecg" aria-labelledby="ecg-workbench-title">
@@ -306,64 +316,114 @@
 
             <form class="ecg-axis-form" id="ecgAxisForm">
               <div class="ecg-axis-form__head">
-                <strong>Leitura por eixos</strong>
-                <span>Marque o estado e detalhe somente o que foi realmente observado.</span>
+                <strong>Leitura acadêmica por eixos</strong>
+                <span>Registre primeiro as medidas objetivas; depois descreva cada eixo sem converter um achado isolado em diagnóstico.</span>
               </div>
 
+              <section class="ecg-measurements" aria-labelledby="ecg-measurements-title">
+                <div class="ecg-measurements__head">
+                  <strong id="ecg-measurements-title">Medidas e condições do registro</strong>
+                  <span>Use “não informado” quando a medida não puder ser confirmada no traçado.</span>
+                </div>
+                <div class="ecg-measurements__grid">
+                  <label class="ecg-field" for="ecgSpeed">
+                    <span>Velocidade</span>
+                    <select id="ecgSpeed" data-measure data-measure-label="Velocidade" data-measure-unit="mm/s">
+                      <option value="">Não informada</option>
+                      <option value="25">25 mm/s</option>
+                      <option value="50">50 mm/s</option>
+                    </select>
+                  </label>
+                  <label class="ecg-field" for="ecgGain">
+                    <span>Ganho</span>
+                    <select id="ecgGain" data-measure data-measure-label="Ganho" data-measure-unit="mm/mV">
+                      <option value="">Não informado</option>
+                      <option value="10">10 mm/mV</option>
+                      <option value="5">5 mm/mV</option>
+                      <option value="20">20 mm/mV</option>
+                    </select>
+                  </label>
+                  <label class="ecg-field" for="ecgRateManual">
+                    <span>Frequência ventricular</span>
+                    <input id="ecgRateManual" data-measure data-measure-label="Frequência ventricular" data-measure-unit="bpm" type="number" min="20" max="300" step="1" inputmode="numeric" placeholder="bpm" />
+                  </label>
+                  <label class="ecg-field" for="ecgAxisDegrees">
+                    <span>Eixo frontal do QRS</span>
+                    <input id="ecgAxisDegrees" data-measure data-measure-label="Eixo frontal do QRS" data-measure-unit="°" type="number" min="-180" max="180" step="1" inputmode="numeric" placeholder="graus" />
+                  </label>
+                  <label class="ecg-field" for="ecgPrMs">
+                    <span>Intervalo PR</span>
+                    <input id="ecgPrMs" data-measure data-measure-label="PR" data-measure-unit="ms" type="number" min="40" max="600" step="1" inputmode="numeric" placeholder="ms" />
+                  </label>
+                  <label class="ecg-field" for="ecgQrsMs">
+                    <span>Duração do QRS</span>
+                    <input id="ecgQrsMs" data-measure data-measure-label="QRS" data-measure-unit="ms" type="number" min="40" max="400" step="1" inputmode="numeric" placeholder="ms" />
+                  </label>
+                  <label class="ecg-field" for="ecgQtMs">
+                    <span>Intervalo QT</span>
+                    <input id="ecgQtMs" data-measure data-measure-label="QT" data-measure-unit="ms" type="number" min="150" max="900" step="1" inputmode="numeric" placeholder="ms" />
+                  </label>
+                  <label class="ecg-field" for="ecgQtcMs">
+                    <span>QT corrigido</span>
+                    <input id="ecgQtcMs" data-measure data-measure-label="QTc" data-measure-unit="ms" type="number" min="150" max="900" step="1" inputmode="numeric" placeholder="ms" />
+                  </label>
+                </div>
+              </section>
+
               <div class="ecg-axis-list">
-                <label class="ecg-axis" for="axisBaseline">
-                  <span><strong>01</strong> Normalidade e medidas</span>
-                  <select id="axisBaseline" data-axis="ecg_measurements">
-                    <option value="Não avaliado">Não avaliado</option>
-                    <option value="Sem alteração aparente">Sem alteração aparente</option>
-                    <option value="Achado a revisar">Achado a revisar</option>
-                  </select>
-                </label>
-                <label class="ecg-axis" for="axisRhythm">
-                  <span><strong>02</strong> Ritmo, FA e flutter</span>
-                  <select id="axisRhythm" data-axis="ecg_rhythm">
-                    <option value="Não avaliado">Não avaliado</option>
-                    <option value="Sem alteração aparente">Sem alteração aparente</option>
-                    <option value="Achado a revisar">Achado a revisar</option>
-                  </select>
-                </label>
-                <label class="ecg-axis" for="axisConduction">
-                  <span><strong>03</strong> Condução e intervalos</span>
-                  <select id="axisConduction" data-axis="ecg_conduction_intervals">
-                    <option value="Não avaliado">Não avaliado</option>
-                    <option value="Sem alteração aparente">Sem alteração aparente</option>
-                    <option value="Achado a revisar">Achado a revisar</option>
-                  </select>
-                </label>
-                <label class="ecg-axis" for="axisStt">
-                  <span><strong>04</strong> Segmento ST-T e lesão</span>
-                  <select id="axisStt" data-axis="ecg_st_t_injury">
-                    <option value="Não avaliado">Não avaliado</option>
-                    <option value="Sem alteração aparente">Sem alteração aparente</option>
-                    <option value="Achado a revisar">Achado a revisar</option>
-                  </select>
-                </label>
-                <label class="ecg-axis" for="axisOverload">
-                  <span><strong>05</strong> Sobrecargas e remodelamento</span>
-                  <select id="axisOverload" data-axis="ecg_overload_remodeling">
-                    <option value="Não avaliado">Não avaliado</option>
-                    <option value="Sem alteração aparente">Sem alteração aparente</option>
-                    <option value="Achado a revisar">Achado a revisar</option>
-                  </select>
-                </label>
-                <label class="ecg-axis" for="axisEctopy">
-                  <span><strong>06</strong> Ectopias, pausas e frequência</span>
-                  <select id="axisEctopy" data-axis="ecg_ectopy_rate">
-                    <option value="Não avaliado">Não avaliado</option>
-                    <option value="Sem alteração aparente">Sem alteração aparente</option>
-                    <option value="Achado a revisar">Achado a revisar</option>
-                  </select>
-                </label>
+                <fieldset class="ecg-axis">
+                  <legend><strong>01</strong> Qualidade técnica e calibração</legend>
+                  <p>Derivações, posicionamento, artefatos, velocidade, ganho e inversões técnicas.</p>
+                  <label class="ecg-axis__status" for="axisTechnical"><span>Estado</span><select id="axisTechnical" data-axis="ecg_technical" data-axis-label="Qualidade técnica e calibração"><option value="Não avaliado">Não avaliado</option><option value="Revisado — sem alerta">Revisado — sem alerta</option><option value="Revisado — achado presente">Revisado — achado presente</option><option value="Limitado / inconclusivo">Limitado / inconclusivo</option></select></label>
+                  <label class="ecg-axis__evidence" for="axisTechnicalNote"><span>Evidência registrada</span><input id="axisTechnicalNote" data-axis-note="ecg_technical" placeholder="Ex.: 12 derivações, 25 mm/s, 10 mm/mV, sem artefato relevante" /></label>
+                </fieldset>
+                <fieldset class="ecg-axis">
+                  <legend><strong>02</strong> Frequência e regularidade</legend>
+                  <p>Frequência atrial/ventricular quando aplicável, RR, pausas, ectopias e padrão de regularidade.</p>
+                  <label class="ecg-axis__status" for="axisRate"><span>Estado</span><select id="axisRate" data-axis="ecg_rate_regularity" data-axis-label="Frequência e regularidade"><option value="Não avaliado">Não avaliado</option><option value="Revisado — sem alerta">Revisado — sem alerta</option><option value="Revisado — achado presente">Revisado — achado presente</option><option value="Limitado / inconclusivo">Limitado / inconclusivo</option></select></label>
+                  <label class="ecg-axis__evidence" for="axisRateNote"><span>Evidência registrada</span><input id="axisRateNote" data-axis-note="ecg_rate_regularity" placeholder="Ex.: 72 bpm, RR regular, sem pausas no trecho" /></label>
+                </fieldset>
+                <fieldset class="ecg-axis">
+                  <legend><strong>03</strong> Ritmo e atividade atrial</legend>
+                  <p>Ondas P, eixo/morfologia atrial, relação P–QRS, ritmo de origem e suspeita de FA/flutter.</p>
+                  <label class="ecg-axis__status" for="axisRhythm"><span>Estado</span><select id="axisRhythm" data-axis="ecg_rhythm" data-axis-label="Ritmo e atividade atrial"><option value="Não avaliado">Não avaliado</option><option value="Revisado — sem alerta">Revisado — sem alerta</option><option value="Revisado — achado presente">Revisado — achado presente</option><option value="Limitado / inconclusivo">Limitado / inconclusivo</option></select></label>
+                  <label class="ecg-axis__evidence" for="axisRhythmNote"><span>Evidência registrada</span><input id="axisRhythmNote" data-axis-note="ecg_rhythm" placeholder="Ex.: P positiva em DII, uma P antes de cada QRS" /></label>
+                </fieldset>
+                <fieldset class="ecg-axis">
+                  <legend><strong>04</strong> Eixo elétrico frontal</legend>
+                  <p>Eixo do QRS no plano frontal e coerência com derivações dos membros.</p>
+                  <label class="ecg-axis__status" for="axisElectrical"><span>Estado</span><select id="axisElectrical" data-axis="ecg_axis" data-axis-label="Eixo elétrico frontal"><option value="Não avaliado">Não avaliado</option><option value="Revisado — sem alerta">Revisado — sem alerta</option><option value="Revisado — achado presente">Revisado — achado presente</option><option value="Limitado / inconclusivo">Limitado / inconclusivo</option></select></label>
+                  <label class="ecg-axis__evidence" for="axisElectricalNote"><span>Evidência registrada</span><input id="axisElectricalNote" data-axis-note="ecg_axis" placeholder="Ex.: eixo do QRS estimado em +60°" /></label>
+                </fieldset>
+                <fieldset class="ecg-axis">
+                  <legend><strong>05</strong> Intervalos e condução</legend>
+                  <p>PR, QRS, QT/QTc, condução AV, bloqueios de ramo/fasciculares e pré-excitação.</p>
+                  <label class="ecg-axis__status" for="axisConduction"><span>Estado</span><select id="axisConduction" data-axis="ecg_conduction_intervals" data-axis-label="Intervalos e condução"><option value="Não avaliado">Não avaliado</option><option value="Revisado — sem alerta">Revisado — sem alerta</option><option value="Revisado — achado presente">Revisado — achado presente</option><option value="Limitado / inconclusivo">Limitado / inconclusivo</option></select></label>
+                  <label class="ecg-axis__evidence" for="axisConductionNote"><span>Evidência registrada</span><input id="axisConductionNote" data-axis-note="ecg_conduction_intervals" placeholder="Ex.: PR 160 ms, QRS 92 ms, QTc 420 ms" /></label>
+                </fieldset>
+                <fieldset class="ecg-axis">
+                  <legend><strong>06</strong> Morfologia e progressão do QRS</legend>
+                  <p>Progressão de R, ondas Q, fragmentação, transição precordial e padrão de ativação ventricular.</p>
+                  <label class="ecg-axis__status" for="axisQrs"><span>Estado</span><select id="axisQrs" data-axis="ecg_qrs_morphology" data-axis-label="Morfologia e progressão do QRS"><option value="Não avaliado">Não avaliado</option><option value="Revisado — sem alerta">Revisado — sem alerta</option><option value="Revisado — achado presente">Revisado — achado presente</option><option value="Limitado / inconclusivo">Limitado / inconclusivo</option></select></label>
+                  <label class="ecg-axis__evidence" for="axisQrsNote"><span>Evidência registrada</span><input id="axisQrsNote" data-axis-note="ecg_qrs_morphology" placeholder="Ex.: progressão de R preservada, sem Q patológica identificada" /></label>
+                </fieldset>
+                <fieldset class="ecg-axis">
+                  <legend><strong>07</strong> ST, T e repolarização</legend>
+                  <p>Desvios de ST, polaridade de T, distribuição contígua, reciprocidade e alterações dinâmicas.</p>
+                  <label class="ecg-axis__status" for="axisStt"><span>Estado</span><select id="axisStt" data-axis="ecg_st_t_injury" data-axis-label="ST, T e repolarização"><option value="Não avaliado">Não avaliado</option><option value="Revisado — sem alerta">Revisado — sem alerta</option><option value="Revisado — achado presente">Revisado — achado presente</option><option value="Limitado / inconclusivo">Limitado / inconclusivo</option></select></label>
+                  <label class="ecg-axis__evidence" for="axisSttNote"><span>Evidência registrada</span><input id="axisSttNote" data-axis-note="ecg_st_t_injury" placeholder="Ex.: sem desvio significativo de ST nas derivações avaliadas" /></label>
+                </fieldset>
+                <fieldset class="ecg-axis">
+                  <legend><strong>08</strong> Sobrecarga e padrão estrutural</legend>
+                  <p>Critérios atriais/ventriculares, voltagens, strain e necessidade de correlação com imagem.</p>
+                  <label class="ecg-axis__status" for="axisOverload"><span>Estado</span><select id="axisOverload" data-axis="ecg_overload_remodeling" data-axis-label="Sobrecarga e padrão estrutural"><option value="Não avaliado">Não avaliado</option><option value="Revisado — sem alerta">Revisado — sem alerta</option><option value="Revisado — achado presente">Revisado — achado presente</option><option value="Limitado / inconclusivo">Limitado / inconclusivo</option></select></label>
+                  <label class="ecg-axis__evidence" for="axisOverloadNote"><span>Evidência registrada</span><input id="axisOverloadNote" data-axis-note="ecg_overload_remodeling" placeholder="Ex.: critério de voltagem presente; correlacionar com ecocardiograma" /></label>
+                </fieldset>
               </div>
 
               <label class="ecg-field" for="ecgNotes">
-                <span>Observações do estudo</span>
-                <textarea id="ecgNotes" rows="4" placeholder="Ex.: ritmo irregular, ausência de onda P organizada, revisar DII e V1..."></textarea>
+                <span>Síntese acadêmica e comparação</span>
+                <textarea id="ecgNotes" rows="5" placeholder="Descreva o achado principal, comparação com ECG prévio, hipótese a confirmar, prioridade e limitações do registro."></textarea>
               </label>
 
               <button class="ecg-generate" type="submit">Gerar resumo acadêmico</button>
@@ -437,9 +497,24 @@
             <span class="dod-ai-ecg__section-kicker">Roteiros de interpretação</span>
             <h2 id="reading-modes-title">Quatro modos para ler o padrão do ECG</h2>
             <p>
-              O modo sistemático evita omissões. Os modos dirigidos reorganizam a mesma leitura conforme
-              a pergunta acadêmica, sem transformar um achado isolado em diagnóstico ou conduta.
+              Comece sempre pela leitura sistemática. Os modos dirigidos aumentam o foco conforme a
+              pergunta acadêmica, mas não substituem a revisão completa nem autorizam conduta isoladamente.
             </p>
+          </div>
+
+          <div class="ecg-reading-modes__matrix" role="region" aria-labelledby="reading-matrix-title" tabindex="0">
+            <table>
+              <caption id="reading-matrix-title">Quadro comparativo dos modos de leitura</caption>
+              <thead>
+                <tr><th scope="col">Modo</th><th scope="col">Pergunta-guia</th><th scope="col">Priorizar</th><th scope="col">Saída mínima</th></tr>
+              </thead>
+              <tbody>
+                <tr><th scope="row">Sistemática completa</th><td>O que o traçado mostra, passo a passo?</td><td>Todos os oito eixos, qualidade e comparação.</td><td>Descrição estruturada com limites.</td></tr>
+                <tr><th scope="row">Ritmo e arritmia</th><td>Qual é a origem e a organização do ritmo?</td><td>RR, P, relação P–QRS, ectopias e pausas.</td><td>Ritmo provável e forma de confirmação.</td></tr>
+                <tr><th scope="row">ST-T, Q e repolarização</th><td>Há padrão regional ou dinâmico?</td><td>Derivações contíguas, reciprocidade e comparação seriada.</td><td>Descrição territorial e grau de prioridade.</td></tr>
+                <tr><th scope="row">Condução, eixo e QRS</th><td>Como o impulso atravessa átrios e ventrículos?</td><td>PR, QRS, QTc, eixo, bloqueios, voltagens e progressão de R.</td><td>Padrão de condução e correlação necessária.</td></tr>
+              </tbody>
+            </table>
           </div>
 
           <div class="ecg-reading-modes__tabs" role="tablist" aria-label="Escolher roteiro de interpretação do ECG">
@@ -447,13 +522,13 @@
               <span>01</span> Sistemática completa
             </button>
             <button type="button" role="tab" id="reading-tab-rhythm" aria-controls="reading-panel-rhythm" aria-selected="false" tabindex="-1" data-reading-tab="rhythm">
-              <span>02</span> Ritmo e cardioembolia
+              <span>02</span> Ritmo e arritmia
             </button>
             <button type="button" role="tab" id="reading-tab-stt" aria-controls="reading-panel-stt" aria-selected="false" tabindex="-1" data-reading-tab="stt">
-              <span>03</span> ST-T e lesão
+              <span>03</span> ST-T, Q e repolarização
             </button>
             <button type="button" role="tab" id="reading-tab-conduction" aria-controls="reading-panel-conduction" aria-selected="false" tabindex="-1" data-reading-tab="conduction">
-              <span>04</span> Condução e sobrecarga
+              <span>04</span> Condução, eixo e QRS
             </button>
           </div>
 
@@ -468,9 +543,10 @@
               </div>
               <ol class="ecg-reading-mode__steps">
                 <li><strong>Qualidade e calibração</strong><span>Identificação, 12 derivações, artefatos, velocidade e ganho.</span></li>
-                <li><strong>Frequência e regularidade</strong><span>Frequência ventricular, padrão dos RR e pausas.</span></li>
+                <li><strong>Frequência e regularidade</strong><span>Frequências atrial/ventricular quando aplicável, padrão dos RR, ectopias e pausas.</span></li>
                 <li><strong>Ritmo e atividade atrial</strong><span>Ondas P, relação P–QRS e origem provável do ritmo.</span></li>
-                <li><strong>Eixo e intervalos</strong><span>Eixo frontal, PR, duração do QRS e QT/QTc.</span></li>
+                <li><strong>Eixo frontal</strong><span>Estimar o eixo do QRS e verificar coerência nas derivações dos membros.</span></li>
+                <li><strong>Intervalos e condução</strong><span>PR, duração do QRS, QT/QTc, condução AV e intraventricular.</span></li>
                 <li><strong>Morfologia do QRS</strong><span>Progressão de R, ondas Q, bloqueios, pré-excitação e ectopias.</span></li>
                 <li><strong>ST, T e repolarização</strong><span>Distribuição por derivações contíguas e alterações recíprocas.</span></li>
                 <li><strong>Sobrecargas</strong><span>Critérios atriais e ventriculares, sempre como pistas elétricas.</span></li>
@@ -481,17 +557,17 @@
             <article role="tabpanel" id="reading-panel-rhythm" aria-labelledby="reading-tab-rhythm" data-reading-panel="rhythm" hidden>
               <div class="ecg-reading-mode__summary">
                 <span>Modo 02</span>
-                <h3>Ritmo e pistas cardioembólicas</h3>
-                <p>Prioriza atividade atrial e irregularidade, sem calcular risco de AVC a partir do ECG isolado.</p>
+                <h3>Ritmo, atividade atrial e arritmias</h3>
+                <p>Prioriza origem, organização e relação atrioventricular; pistas cardioembólicas entram apenas depois da confirmação do ritmo.</p>
                 <strong>Ponto de segurança</strong>
-                <p>Um traçado breve sem FA não exclui FA paroxística; pode ser necessária monitorização mais longa.</p>
+                <p>Irregularidade de RR não confirma FA. Um traçado breve sem FA também não exclui FA paroxística.</p>
               </div>
               <ol class="ecg-reading-mode__steps">
                 <li><strong>Validar o trecho</strong><span>Duração, ruído, derivação escolhida e complexos suficientes.</span></li>
                 <li><strong>Mapear os RR</strong><span>Regularidade, variabilidade, pausas e padrões repetitivos.</span></li>
                 <li><strong>Procurar ondas P</strong><span>Presença, morfologia, organização e relação com cada QRS.</span></li>
-                <li><strong>Classificar o padrão</strong><span>Sinusal, FA/flutter suspeitos, ectopias ou ritmo ainda indeterminado.</span></li>
-                <li><strong>Buscar sinais associados</strong><span>Alteração atrial, frequência, condução e ectopias.</span></li>
+                <li><strong>Relacionar P e QRS</strong><span>Condução 1:1, bloqueio, dissociação, atividade atrial oculta ou resposta variável.</span></li>
+                <li><strong>Classificar o padrão</strong><span>Sinusal, FA/flutter suspeitos, taquiarritmia, bradiarritmia, ectopias ou indeterminado.</span></li>
                 <li><strong>Definir confirmação</strong><span>ECG prolongado, Holter ou monitorização conforme o contexto profissional.</span></li>
               </ol>
             </article>
@@ -499,8 +575,8 @@
             <article role="tabpanel" id="reading-panel-stt" aria-labelledby="reading-tab-stt" data-reading-panel="stt" hidden>
               <div class="ecg-reading-mode__summary">
                 <span>Modo 03</span>
-                <h3>ST-T, isquemia e lesão</h3>
-                <p>Organiza território, dinâmica e reciprocidade. O ECG participa da investigação, mas não funciona sozinho.</p>
+                <h3>ST-T, ondas Q e repolarização</h3>
+                <p>Organiza distribuição, dinâmica e reciprocidade antes de propor mecanismos como isquemia ou alteração secundária.</p>
                 <strong>Ponto de segurança</strong>
                 <p>Sintomas compatíveis ou padrão potencialmente agudo exigem avaliação profissional imediata.</p>
               </div>
@@ -517,8 +593,8 @@
             <article role="tabpanel" id="reading-panel-conduction" aria-labelledby="reading-tab-conduction" data-reading-panel="conduction" hidden>
               <div class="ecg-reading-mode__summary">
                 <span>Modo 04</span>
-                <h3>Condução, intervalos e sobrecarga</h3>
-                <p>Separa atraso elétrico, morfologia ventricular e critérios de remodelamento.</p>
+                <h3>Condução, eixo e morfologia do QRS</h3>
+                <p>Separa atraso elétrico, padrão de ativação ventricular, eixo frontal e critérios de sobrecarga.</p>
                 <strong>Ponto de segurança</strong>
                 <p>Critério de voltagem não confirma hipertrofia; estrutura e função dependem de correlação por imagem.</p>
               </div>
@@ -537,7 +613,7 @@
             Base acadêmica:
             <a href="https://www.ahajournals.org/doi/epdf/10.1161/CIRCULATIONAHA.106.180200" target="_blank" rel="noopener noreferrer">AHA/ACCF/HRS · padronização do ECG</a>
             <span aria-hidden="true">·</span>
-            <a href="https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193" target="_blank" rel="noopener noreferrer">ACC/AHA 2023 · fibrilação atrial</a>
+            <a href="https://www.escardio.org/guidelines/clinical-practice-guidelines/all-esc-practice-guidelines/atrial-fibrillation/" target="_blank" rel="noopener noreferrer">ESC 2024 · fibrilação atrial</a>
             <span aria-hidden="true">·</span>
             <a href="https://professional.heart.org/en/guidelines-statements/2025-accahaacepnaemspscai-guideline-for-the-management-of-patients-with-acutecir0000000000001309" target="_blank" rel="noopener noreferrer">ACC/AHA 2025 · síndromes coronarianas agudas</a>
           </p>
@@ -546,64 +622,76 @@
         <div class="dod-ai-ecg__cards" id="marcadores" aria-label="Eixos da leitura acadêmica do eletrocardiograma">
           <article>
             <span class="dod-ai-ecg__card-index">01</span>
-            <h2>Referência de normalidade</h2>
-            <p>Confere calibração, frequência, regularidade, ritmo sinusal, eixo e intervalos PR, QRS e QTc. Um ECG normal não exclui arritmia intermitente.</p>
+            <h2>Qualidade e calibração</h2>
+            <p>Confere identificação, derivações, velocidade, ganho e artefatos antes de interpretar medidas ou morfologia.</p>
           </article>
 
           <article>
             <span class="dod-ai-ecg__card-index">02</span>
-            <h2>Ritmo, FA e flutter</h2>
-            <p>Procura ondas P organizadas, regularidade dos intervalos RR, atividade atrial e resposta ventricular. Suspeitas exigem confirmação no traçado ou monitorização.</p>
+            <h2>Frequência e regularidade</h2>
+            <p>Registra frequências atrial e ventricular quando aplicável, padrão dos RR, ectopias e pausas no trecho disponível.</p>
           </article>
 
           <article>
             <span class="dod-ai-ecg__card-index">03</span>
-            <h2>Condução e intervalos</h2>
-            <p>Sinaliza bloqueios AV, bloqueios de ramo, QRS alargado, pausas e QTc alterado. Esses achados mudam a prioridade, mas não definem a causa sozinhos.</p>
+            <h2>Ritmo e atividade atrial</h2>
+            <p>Procura ondas P, sua relação com os QRS e a origem provável do ritmo. Irregularidade isolada não confirma fibrilação atrial.</p>
           </article>
 
           <article>
             <span class="dod-ai-ecg__card-index">04</span>
-            <h2>Segmento ST-T e lesão</h2>
-            <p>Mapeia elevação ou depressão de ST, inversões de T e ondas Q. Padrões potencialmente agudos precisam de correlação clínica imediata e avaliação profissional.</p>
+            <h2>Eixo elétrico frontal</h2>
+            <p>Estima o eixo do QRS nas derivações dos membros e descreve desvios sem presumir sua causa.</p>
           </article>
 
           <article>
             <span class="dod-ai-ecg__card-index">05</span>
-            <h2>Sobrecargas e remodelamento</h2>
-            <p>Organiza sinais de alteração atrial e critérios de hipertrofia ou strain ventricular. São pistas elétricas; ecocardiograma e contexto confirmam a estrutura.</p>
+            <h2>Intervalos e condução</h2>
+            <p>Mede PR, QRS e QT/QTc e descreve condução AV, bloqueios intraventriculares, pausas e pré-excitação.</p>
           </article>
 
           <article>
             <span class="dod-ai-ecg__card-index">06</span>
-            <h2>Ectopias, pausas e frequência</h2>
-            <p>Classifica extrassístoles, taquicardia, bradicardia e pausas. A carga arrítmica depende de registro mais longo quando o ECG curto não captura o evento.</p>
+            <h2>Morfologia do QRS</h2>
+            <p>Revisa progressão de R, ondas Q, transição precordial, fragmentação e padrão de ativação ventricular.</p>
+          </article>
+
+          <article>
+            <span class="dod-ai-ecg__card-index">07</span>
+            <h2>ST, T e repolarização</h2>
+            <p>Mapeia alterações em derivações contíguas, reciprocidade e dinâmica. Padrões potencialmente agudos exigem avaliação imediata.</p>
+          </article>
+
+          <article>
+            <span class="dod-ai-ecg__card-index">08</span>
+            <h2>Sobrecarga e estrutura</h2>
+            <p>Organiza critérios atriais e ventriculares como pistas elétricas; imagem e contexto confirmam estrutura e função.</p>
           </article>
         </div>
 
         <section class="dod-ai-ecg__interpretation" aria-labelledby="dod-interpretation-title">
           <div>
             <span class="dod-ai-ecg__section-kicker">Camadas de evidência</span>
-            <h2 id="dod-interpretation-title">Como a leitura chega ao risco</h2>
+            <h2 id="dod-interpretation-title">Como o traçado chega à síntese acadêmica</h2>
             <p>
-              Primeiro descrevemos o traçado. Depois classificamos o grau de alerta e cruzamos com
-              história, sintomas, fatores clínicos e exames complementares. Escores tromboembólicos,
-              anticoagulação e conduta nunca são derivados apenas do ECG.
+              A síntese começa por dados mensuráveis, passa pela descrição do padrão e só então integra
+              história, sintomas, exames e comparação temporal. Escores, diagnóstico etiológico e conduta
+              nunca são derivados apenas do ECG.
             </p>
           </div>
 
           <ol class="dod-ai-ecg__interpretation-steps" aria-label="Etapas da leitura DOD">
             <li>
               <strong>Descrever</strong>
-              <span>Separar normalidade, variante e alteração mensurável sem transformar sinal em diagnóstico.</span>
+              <span>Registrar medidas, morfologia e distribuição sem transformar o sinal em diagnóstico.</span>
             </li>
             <li>
-              <strong>Sinalizar</strong>
-              <span>Destacar FA/flutter, padrões ST-T, ondas Q, sobrecargas, distúrbios de condução e eventos arrítmicos.</span>
+              <strong>Integrar</strong>
+              <span>Confrontar padrão, sintomas, ECG anterior, biomarcadores, monitorização e imagem.</span>
             </li>
             <li>
-              <strong>Confirmar</strong>
-              <span>Indicar quando monitorização prolongada, ecocardiograma, imagem ou avaliação urgente são necessários.</span>
+              <strong>Priorizar</strong>
+              <span>Indicar o grau de alerta e a forma de confirmação, deixando explícitos os limites do registro.</span>
             </li>
           </ol>
         </section>

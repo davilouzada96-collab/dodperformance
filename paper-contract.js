@@ -54,6 +54,7 @@ export function createPaper(input) {
     abstract: cleanText(input.abstract),
     meshTerms: cleanList(input.meshTerms),
     evidenceType: PAPER_EVIDENCE_TYPES.has(input.evidenceType) ? input.evidenceType : null,
+    evidenceBasis: cleanText(input.evidenceBasis),
     clinicalTopicIds: cleanList(input.clinicalTopicIds),
     score: finiteOrNull(input.score),
     searchRelevance: finiteOrNull(input.searchRelevance),

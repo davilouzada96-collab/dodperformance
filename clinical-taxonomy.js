@@ -38,12 +38,14 @@ const definitions = [
   ["asthma", "asma", ["asthma"]],
   ["diabetes", "diabetes", ["diabetes"]],
   ["ecg", "eletrocardiograma", ["electrocardiogram", "ecg"], "cardiovascular"],
-  ["ecg_measurements", "normalidade e medidas", ["ecg measurements", "qt interval", "qtc", "pr interval", "qrs"], "ecg"],
-  ["ecg_rhythm", "ritmo, FA e flutter", ["cardiac rhythm", "atrial fibrillation", "atrial flutter", "arrhythmia"], "ecg"],
-  ["ecg_conduction_intervals", "condução e intervalos", ["cardiac conduction", "conduction disorder", "ecg intervals"], "ecg"],
-  ["ecg_st_t_injury", "segmento ST-T e lesão", ["st segment", "t wave", "myocardial injury"], "ecg"],
-  ["ecg_overload_remodeling", "sobrecargas e remodelamento", ["cardiac hypertrophy", "cardiac remodeling", "ventricular overload"], "ecg"],
-  ["ecg_ectopy_rate", "ectopias, pausas e frequência", ["ectopy", "cardiac pause", "bradycardia", "tachycardia"], "ecg"],
+  ["ecg_technical", "qualidade técnica e calibração", ["ecg quality", "ecg calibration", "lead placement"], "ecg"],
+  ["ecg_rate_regularity", "frequência e regularidade", ["heart rate", "rhythm regularity", "ectopy", "cardiac pause", "bradycardia", "tachycardia"], "ecg"],
+  ["ecg_rhythm", "ritmo e atividade atrial", ["cardiac rhythm", "atrial activity", "atrial fibrillation", "atrial flutter", "arrhythmia"], "ecg"],
+  ["ecg_axis", "eixo elétrico frontal", ["qrs axis", "electrical axis"], "ecg"],
+  ["ecg_conduction_intervals", "intervalos e condução", ["cardiac conduction", "conduction disorder", "ecg intervals", "qt interval", "qtc", "pr interval"], "ecg"],
+  ["ecg_qrs_morphology", "morfologia e progressão do QRS", ["qrs morphology", "r wave progression", "pathological q wave"], "ecg"],
+  ["ecg_st_t_injury", "ST, T e repolarização", ["st segment", "t wave", "ventricular repolarization", "myocardial injury"], "ecg"],
+  ["ecg_overload_remodeling", "sobrecarga e padrão estrutural", ["cardiac hypertrophy", "cardiac remodeling", "ventricular overload"], "ecg"],
 ];
 
 export const clinicalTopics = definitions.map(([id, labelPtBr, terms, parentId = null]) => ({ id, labelPtBr, terms, parentId }));

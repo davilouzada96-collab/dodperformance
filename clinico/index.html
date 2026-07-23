@@ -29,7 +29,7 @@
     <!-- Faixa ética: a coluna do projeto, sempre à vista -->
     <div class="gate-strip">
       <div class="gate-inner">
-        <span class="verified-pill">Acesso acadêmico</span>
+        <span class="verified-pill">Declaração acadêmica local</span>
         <span class="ethic-line">
           <strong>Apoio à decisão</strong> · não conclui diagnóstico · eleva a margem de quem decide
         </span>
@@ -39,12 +39,15 @@
     </div>
 
     <main class="app-shell">
-      <!-- Cadastro acadêmico local: não envia dados nem exige confirmação -->
+      <!-- Declaração acadêmica local: não envia dados nem constitui autenticação -->
       <div class="gate-overlay" id="gateOverlay">
-        <div class="gate-card" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
-          <p class="gate-eyebrow">ACESSO ACADÊMICO GRATUITO</p>
-          <h2 id="gateTitle">Identifique seu perfil</h2>
-          <p class="gate-sub">Área pública para estudantes e profissionais da saúde.</p>
+        <div class="gate-card" role="dialog" aria-modal="true" aria-labelledby="gateTitle" aria-describedby="gateDescription">
+          <p class="gate-eyebrow">DECLARAÇÃO ACADÊMICA LOCAL</p>
+          <h2 id="gateTitle" tabindex="-1">Identifique seu perfil</h2>
+          <p class="gate-sub" id="gateDescription">
+            Área pública para estudantes e profissionais da saúde. Esta etapa declara o perfil,
+            mas não verifica vínculo institucional.
+          </p>
 
           <div class="gate-ethic">
             Aqui é apoio à decisão — não conclui diagnóstico. As ferramentas elevam a margem de quem
@@ -53,7 +56,7 @@
 
           <form class="gate-form" id="gateForm" novalidate>
             <div class="field-stack">
-              <label for="gateEmail" id="gateEmailLabel">E-mail da universidade ou institucional</label>
+              <label for="gateEmail" id="gateEmailLabel">E-mail acadêmico ou institucional (não verificado)</label>
               <input id="gateEmail" type="email" placeholder="voce@universidade.edu.br" autocomplete="email" />
             </div>
             <div class="field-stack">
@@ -81,13 +84,13 @@
               </label>
             </div>
 
-            <p class="gate-error" id="gateError" aria-live="polite"></p>
+            <p class="gate-error" id="gateError" role="alert" aria-live="assertive"></p>
             <button class="gate-submit" type="submit" id="gateSubmit">Entrar gratuitamente</button>
           </form>
 
           <p class="gate-foot">
-            O e-mail é validado e descartado. Papel, instituição e ano ficam somente neste navegador.
-            Não enviamos confirmação e não usamos créditos. Conteúdo exclusivamente acadêmico e científico.
+            Somente o formato do e-mail é conferido; ele é descartado. Papel, instituição e ano ficam
+            somente neste navegador. Não enviamos confirmação e não usamos créditos.
           </p>
         </div>
       </div>
@@ -196,12 +199,12 @@
           </p>
         </div>
 
-        <!-- Painel 3 · Filtros de qualidade -->
+        <!-- Painel 2 · Filtros de qualidade -->
         <div class="panel" id="filterPanel" hidden>
           <h3>Refinar a evidência</h3>
-          <p class="panel-hint">
-            Ordene por força de evidência e limpe o ruído. A pontuação favorece diretrizes, revisões
-            sistemáticas e meta-análises; rebaixa preprints e fontes não revisadas.
+          <p class="panel-hint" id="qualityScoringNote">
+            Ordene por prioridade de triagem e reduza o ruído. A pontuação é uma heurística de
+            descoberta baseada em metadados; não mede certeza clínica nem substitui avaliação crítica.
           </p>
           <div class="filter-grid">
             <div class="field-stack">
@@ -214,8 +217,8 @@
             </div>
             <div class="field-stack">
               <label for="sortSelect">Ordenar por</label>
-              <select id="sortSelect">
-                <option value="score-desc">Força de evidência</option>
+              <select id="sortSelect" aria-describedby="qualityScoringNote">
+                <option value="score-desc">Prioridade de triagem</option>
                 <option value="year-desc">Mais recentes</option>
                 <option value="citations-desc">Mais citados</option>
               </select>
@@ -226,25 +229,26 @@
             </div>
             <div class="check-row">
               <input id="strictEvidence" type="checkbox" />
-              <label for="strictEvidence">Só evidência forte</label>
+              <label for="strictEvidence">Só tipos prioritários verificados no PubMed</label>
             </div>
             <div class="check-row">
-              <input id="cleanSources" type="checkbox" />
-              <label for="cleanSources">Só fontes limpas</label>
+              <input id="cleanSources" type="checkbox" checked />
+              <label for="cleanSources">Ocultar fontes frágeis</label>
             </div>
           </div>
         </div>
 
         <p class="run-status" id="runStatus">Preparando biblioteca científica...</p>
 
-        <!-- A REGRA FORTE: reativa só dentro do clínico verificado. Auto-revela quando a evidência é fraca. -->
+        <!-- A REGRA FORTE: reativa após a declaração acadêmica e revela limites do recorte. -->
         <div class="honesty" id="honestyBanner" role="status" aria-live="polite" hidden>
           <span class="honesty-mark" aria-hidden="true">!</span>
           <div>
-            <h4>Atenção: a evidência aqui é limitada</h4>
+            <h4>Atenção: o recorte exige verificação</h4>
             <p id="honestyText"></p>
             <p class="honesty-foot">
-              Isto não desqualifica a busca — sinaliza onde a base é frágil para que a decisão final, que é sua, leve isso em conta.
+              Este aviso descreve lacunas de metadados e classificação. Não equivale a uma avaliação
+              GRADE, risco de viés ou recomendação clínica.
             </p>
           </div>
         </div>
@@ -311,8 +315,12 @@
         </header>
         <div class="reader-tags" id="readerTags"></div>
         <section class="reader-section">
-          <h3>Leitura em português</h3>
+          <h3>Orientação de leitura gerada</h3>
           <p id="readerAbstract"></p>
+        </section>
+        <section class="reader-section">
+          <h3>Resumo original</h3>
+          <p id="readerOriginalAbstract"></p>
         </section>
         <section class="reader-grid">
           <div><h3>Fonte</h3><p id="readerSource"></p></div>
@@ -330,10 +338,10 @@
     </div>
 
     <!-- Motor reaproveitado, idêntico ao baseline -->
-    <script type="module" src="./app.js?v=20260718-clinical-taxonomy"></script>
+    <script type="module" src="./app.js?v=20260723-clinical-trust"></script>
     <!-- Camada acadêmica: revelação progressiva + regra forte da honestidade -->
-    <script src="./bench.js"></script>
+    <script src="./bench.js?v=20260723-clinical-trust"></script>
     <!-- Cadastro acadêmico local e gratuito -->
-    <script src="./gate.js"></script>
+    <script src="./gate.js?v=20260723-clinical-trust"></script>
   </body>
 </html>

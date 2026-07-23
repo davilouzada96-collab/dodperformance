@@ -22,6 +22,14 @@
   const errorEl = document.getElementById("gateError");
   const profileSummary = document.getElementById("profileSummary");
   const profileReset = document.getElementById("profileReset");
+  const gateTitle = document.getElementById("gateTitle");
+  const gateCard = overlay.querySelector(".gate-card");
+  const backgroundRoots = [
+    document.querySelector(".site-header"),
+    document.querySelector(".gate-strip"),
+    ...document.querySelectorAll(".app-shell > :not(#gateOverlay)"),
+  ].filter(Boolean);
+  const backgroundState = new Map();
 
   const PROFILE_KEY = "dodAcademicProfile";
   const currentYear = new Date().getFullYear();
@@ -31,21 +39,26 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   }
 
-  function setError(message) {
+  function setError(message, field = null) {
+    form.querySelectorAll("[aria-invalid='true']").forEach((item) => item.removeAttribute("aria-invalid"));
     errorEl.textContent = message || "";
+    if (field) {
+      field.setAttribute("aria-invalid", "true");
+      field.focus();
+    }
   }
 
   function validate() {
-    if (!role.value) return "Selecione se você é estudante ou profissional da saúde.";
-    if (!looksLikeEmail(email.value.trim())) return "Informe um e-mail institucional válido.";
-    if (!institution.value.trim()) return "Informe sua universidade, instituição ou conselho.";
+    if (!role.value) return { message: "Selecione se você é estudante ou profissional da saúde.", field: role };
+    if (!looksLikeEmail(email.value.trim())) return { message: "Informe um e-mail em formato válido.", field: email };
+    if (!institution.value.trim()) return { message: "Informe sua universidade, instituição ou conselho.", field: institution };
 
     const year = Number(graduationYear.value);
     if (!Number.isInteger(year) || year < 1950 || year > currentYear + 15) {
-      return "Informe um ano de formação ou conclusão válido.";
+      return { message: "Informe um ano de formação ou conclusão válido.", field: graduationYear };
     }
-    if (!declare.checked) return "Confirme a declaração acadêmica para continuar.";
-    return "";
+    if (!declare.checked) return { message: "Confirme a declaração acadêmica para continuar.", field: declare };
+    return null;
   }
 
   function roleLabel(value) {
@@ -55,11 +68,44 @@
   function updateRoleCopy() {
     const isProfessional = role.value === "profissional";
     emailLabel.textContent = isProfessional
-      ? "E-mail profissional ou institucional"
-      : "E-mail da universidade ou institucional";
+      ? "E-mail profissional ou institucional (não verificado)"
+      : "E-mail acadêmico ou institucional (não verificado)";
     email.placeholder = isProfessional
       ? "voce@hospital.org.br"
       : "voce@universidade.edu.br";
+  }
+
+  function setBackgroundInert(isInert) {
+    backgroundRoots.forEach((element) => {
+      if (isInert) {
+        if (!backgroundState.has(element)) {
+          backgroundState.set(element, {
+            inert: element.inert,
+            ariaHidden: element.getAttribute("aria-hidden"),
+          });
+        }
+        element.inert = true;
+        element.setAttribute("aria-hidden", "true");
+        return;
+      }
+
+      const previous = backgroundState.get(element);
+      element.inert = previous?.inert || false;
+      if (previous?.ariaHidden === null || previous?.ariaHidden === undefined) {
+        element.removeAttribute("aria-hidden");
+      } else {
+        element.setAttribute("aria-hidden", previous.ariaHidden);
+      }
+    });
+
+    if (!isInert) backgroundState.clear();
+  }
+
+  function setGateOpen(isOpen) {
+    overlay.hidden = !isOpen;
+    setBackgroundInert(isOpen);
+    document.body.classList.toggle("modal-open", isOpen);
+    if (isOpen) requestAnimationFrame(() => gateTitle.focus());
   }
 
   function enterAcademicArea(profile) {
@@ -71,7 +117,7 @@
     window.__academicAccess = true;
     window.__academicProfile = academicProfile;
     profileSummary.textContent = `${roleLabel(academicProfile.role)} · ${academicProfile.institution} · ${academicProfile.graduationYear}`;
-    overlay.hidden = true;
+    setGateOpen(false);
 
     if (typeof window.__academicActivateHonesty === "function") {
       window.__academicActivateHonesty();
@@ -94,7 +140,7 @@
     event.preventDefault();
     const problem = validate();
     if (problem) {
-      setError(problem);
+      setError(problem.message, problem.field);
       return;
     }
 
@@ -122,14 +168,33 @@
     form.reset();
     updateRoleCopy();
     setError("");
-    overlay.hidden = false;
-    email.focus();
+    setGateOpen(true);
+  });
+
+  gateCard.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab") return;
+    const focusable = [...gateCard.querySelectorAll(
+      "button:not([disabled]), input:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex='-1'])"
+    )].filter((item) => item.getClientRects().length);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (document.activeElement === gateTitle) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    } else if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   });
 
   function restoreProfile() {
     try {
       const saved = localStorage.getItem(PROFILE_KEY);
-      if (!saved) return;
+      if (!saved) return false;
       const profile = JSON.parse(saved);
       if (
         profile &&
@@ -138,14 +203,16 @@
         profile.graduationYear
       ) {
         enterAcademicArea(profile);
+        return true;
       }
     } catch (error) {
       try {
         localStorage.removeItem(PROFILE_KEY);
       } catch (storageError) {}
     }
+    return false;
   }
 
   updateRoleCopy();
-  restoreProfile();
+  if (!restoreProfile()) setGateOpen(true);
 })();

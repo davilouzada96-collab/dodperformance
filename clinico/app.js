@@ -112,7 +112,7 @@ const state = {
   year: "all",
   sort: "score-desc",
   minCitations: 0,
-  cleanSources: false,
+  cleanSources: true,
   strictEvidence: false,
   dataSource: "local",
   lastTopic: "",
@@ -203,12 +203,21 @@ const els = {
   readerOriginalTitle: document.querySelector("#readerOriginalTitle"),
   readerTags: document.querySelector("#readerTags"),
   readerAbstract: document.querySelector("#readerAbstract"),
+  readerOriginalAbstract: document.querySelector("#readerOriginalAbstract"),
   readerSource: document.querySelector("#readerSource"),
   readerTrace: document.querySelector("#readerTrace"),
   readerAuthors: document.querySelector("#readerAuthors"),
   readerSourceLink: document.querySelector("#readerSourceLink"),
   readerCopy: document.querySelector("#readerCopy"),
 };
+
+let readerReturnFocus = null;
+const readerBackgroundRoots = [
+  document.querySelector(".site-header"),
+  document.querySelector(".gate-strip"),
+  document.querySelector(".app-shell"),
+].filter(Boolean);
+const readerBackgroundState = new Map();
 
 function getDomain(url) {
   try {
@@ -241,8 +250,8 @@ function abstractFromInvertedIndex(index) {
   return words.filter(Boolean).join(" ");
 }
 
-function titleCaseEvidence(type, title) {
-  const text = `${type || ""} ${title || ""}`.toLowerCase();
+function classifyEvidenceType(type) {
+  const text = String(type || "").toLowerCase();
   if (/guideline|consensus|recommendation/.test(text)) return "guideline";
   if (/meta-analysis|meta analysis/.test(text)) return "meta-analysis";
   if (/systematic review/.test(text)) return "systematic-review";
@@ -392,8 +401,8 @@ function buildPtBrSummary(paper, maxLength = 260) {
   const concepts = getPaperConcepts(paper, 4);
   const subject = joinPtBrList(concepts);
   const source = [paper.journal, paper.year || ""].filter(Boolean).join(", ");
-  const id = paper.pmid ? "PMID rastreável" : paper.doi ? "DOI rastreável" : "fonte rastreável";
-  const sentence = `Leitura guiada em PT-BR: ${evidencePhrasePtBr(paper.evidenceType)} aborda ${subject}. Use para entender o contexto, conferir a fonte original e decidir se o artigo merece leitura completa. ${source ? `Fonte: ${source}.` : ""} ${id}.`;
+  const id = paper.pmid ? "PMID disponível" : paper.doi ? "DOI disponível" : "sem DOI ou PMID registrado nesta base";
+  const sentence = `Orientação gerada em PT-BR: ${evidencePhrasePtBr(paper.evidenceType)} aborda ${subject}. Este texto não traduz nem substitui o resumo original; use-o para decidir se a fonte merece leitura completa. ${source ? `Fonte: ${source}.` : ""} ${id}.`;
   return sentence.length > maxLength ? `${sentence.slice(0, maxLength).trim()}...` : sentence;
 }
 
@@ -583,7 +592,8 @@ function normalizeLocalPaper(paper) {
     pmid: "",
     abstract: "",
     source: "BrowserAct JSON",
-    evidenceType: titleCaseEvidence("article", paper.paper_title),
+    evidenceType: classifyEvidenceType("article"),
+    evidenceBasis: "tipo genérico da base local",
     isOpenAccess: null,
   }));
 }
@@ -611,7 +621,8 @@ function normalizeOpenAlexWork(work) {
     pmid: work.ids?.pmid || "",
     abstract: abstractFromInvertedIndex(work.abstract_inverted_index),
     source: "OpenAlex",
-    evidenceType: titleCaseEvidence(work.type, work.display_name),
+    evidenceType: classifyEvidenceType(work.type),
+    evidenceBasis: "tipo documental informado pelo OpenAlex",
     isOpenAccess: Boolean(work.open_access?.is_oa),
   }), domainOverride: source.host_organization_name || source.display_name || "" });
 }
@@ -654,7 +665,10 @@ function normalizePubMedArticle(article) {
     abstract,
     source: "PubMed",
     publisher: "NCBI",
-    evidenceType: titleCaseEvidence(publicationTypes.join(" "), title),
+    evidenceType: classifyEvidenceType(publicationTypes.join(" ")),
+    evidenceBasis: publicationTypes.length
+      ? "Publication Type estruturado do PubMed"
+      : "metadado genérico do PubMed",
     isOpenAccess: null,
     meshTerms,
   }), domainOverride: "PubMed" });
@@ -723,14 +737,14 @@ function clearCardsForSearch() {
   state.query = "";
   state.year = "all";
   state.minCitations = 0;
-  state.cleanSources = false;
+  state.cleanSources = true;
   state.strictEvidence = false;
   state.synthesis = null;
   state.preserveLibraryOrder = false;
   els.searchInput.value = "";
   els.yearSelect.innerHTML = '<option value="all">Todos</option>';
   els.minCitations.value = "0";
-  els.cleanSources.checked = false;
+  els.cleanSources.checked = true;
   els.strictEvidence.checked = false;
   els.cards.innerHTML = "";
   els.emptyState.hidden = true;
@@ -815,6 +829,22 @@ function setupEvents() {
 
   els.readerClose.addEventListener("click", closeReader);
   els.readerBackdrop.addEventListener("click", closeReader);
+  els.readerModal.addEventListener("keydown", (event) => {
+    if (event.key !== "Tab") return;
+    const focusable = [...els.readerModal.querySelectorAll(
+      "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])"
+    )].filter((item) => item.getClientRects().length);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !els.readerModal.hidden) closeReader();
   });
@@ -914,10 +944,10 @@ async function searchScientific(options = {}) {
     resetYearOptions();
     render();
     if (options.publicLabel) {
-      setStatus(`${publicLabel} pronta com ${state.papers.length} trabalhos rastreáveis.`);
+      setStatus(`${publicLabel} pronta com ${state.papers.length} registros e links de origem.`);
     } else {
       const expansionNote = expandedTopic !== topic ? ` Busca expandida: "${expandedTopic}".` : "";
-      const partialNote = errors.length ? " Algumas fontes não responderam nesta rodada, mas os cards rastreáveis foram mantidos." : "";
+      const partialNote = errors.length ? " Algumas fontes não responderam nesta rodada, mas os registros recuperados foram mantidos." : "";
       setStatus(`${state.dataSource} retornou ${state.papers.length} trabalhos para "${publicLabel}".${expansionNote}${partialNote}`);
     }
   } catch (error) {
@@ -1087,7 +1117,7 @@ async function loadLocalData() {
     state.synthesis = buildSynthesis(state.papers);
     resetYearOptions();
     render();
-    setStatus(`Biblioteca local carregada com ${state.papers.length} artigos rastreáveis.`);
+    setStatus(`Biblioteca local carregada com ${state.papers.length} registros; confirme DOI, PMID e resumo na fonte original.`);
   } catch (error) {
     els.cards.innerHTML = "";
     els.emptyState.hidden = false;
@@ -1117,7 +1147,10 @@ function getFilteredPapers() {
     const matchesYear = state.year === "all" || String(paper.year) === state.year;
     const matchesCitations = paper.citations >= state.minCitations;
     const matchesSource = !state.cleanSources || !paper.isNoisy;
-    const matchesEvidence = !state.strictEvidence || strongEvidence.has(paper.evidenceType);
+    const matchesEvidence = !state.strictEvidence || (
+      strongEvidence.has(paper.evidenceType) &&
+      paper.evidenceBasis === "Publication Type estruturado do PubMed"
+    );
     return matchesQuery && matchesYear && matchesCitations && matchesSource && matchesEvidence;
   });
 
@@ -1159,6 +1192,40 @@ function renderStats(filtered) {
   els.cleanRatio.textContent = `${Math.round((preferred / Math.max(total, 1)) * 100)}%`;
 }
 
+function sourceDisplayLabel(paper) {
+  if (paper.origin === "pubmed" || paper.source === "PubMed") return "PUBMED";
+  if (paper.origin === "openalex" || paper.source === "OpenAlex") return "OPENALEX";
+  if (paper.origin === "local") return "BASE LOCAL";
+  if (paper.source.includes("+")) return "FONTES COMBINADAS";
+  return paper.source || "FONTE NÃO IDENTIFICADA";
+}
+
+function setReaderBackgroundInert(isInert) {
+  readerBackgroundRoots.forEach((element) => {
+    if (isInert) {
+      if (!readerBackgroundState.has(element)) {
+        readerBackgroundState.set(element, {
+          inert: element.inert,
+          ariaHidden: element.getAttribute("aria-hidden"),
+        });
+      }
+      element.inert = true;
+      element.setAttribute("aria-hidden", "true");
+      return;
+    }
+
+    const previous = readerBackgroundState.get(element);
+    element.inert = previous?.inert || false;
+    if (previous?.ariaHidden === null || previous?.ariaHidden === undefined) {
+      element.removeAttribute("aria-hidden");
+    } else {
+      element.setAttribute("aria-hidden", previous.ariaHidden);
+    }
+  });
+
+  if (!isInert) readerBackgroundState.clear();
+}
+
 function renderCard(paper) {
   const node = els.template.content.firstElementChild.cloneNode(true);
   const visual = node.querySelector(".card-visual");
@@ -1173,49 +1240,54 @@ function renderCard(paper) {
   const readButton = node.querySelector(".read-button");
   const [cardA, cardB] = colorPair(paper);
   const href = bestSourceUrl(paper);
-  const translatedTitle = buildPtBrTitle(paper);
-  const translatedAbstract = buildPtBrSummary(paper, 220);
+  const guidedTitle = buildPtBrTitle(paper);
+  const guidedSummary = buildPtBrSummary(paper, 220);
 
   visual.style.setProperty("--card-a", cardA);
   visual.style.setProperty("--card-b", cardB);
   code.textContent = cardCode(paper);
-  source.textContent = paper.source.includes("PubMed") ? "PUBMED" : "OPENALEX";
-  source.title = paper.domain;
-  title.textContent = translatedTitle || paper.title;
+  source.textContent = sourceDisplayLabel(paper);
+  source.title = `${paper.source} · ${paper.domain}`;
+  title.textContent = guidedTitle || paper.title;
   title.title = paper.title;
-  abstract.textContent = translatedAbstract;
+  abstract.textContent = guidedSummary;
   abstract.title = paper.abstract ? stripHtml(paper.abstract) : "";
   journal.textContent = [paper.journal, paper.year || "", paper.doi ? paper.doi.replace("https://doi.org/", "DOI ") : "", paper.pmid ? `PMID ${String(paper.pmid).replace(/\D/g, "")}` : ""]
     .filter(Boolean)
     .join(" • ");
   evidence.textContent = labelEvidence(paper.evidenceType);
-  oa.textContent = "DOD";
+  evidence.title = paper.evidenceBasis || "Classificação documental não informada";
+  oa.textContent = paper.isOpenAccess === true ? "ACESSO ABERTO" : "SÍNTESE DOD";
   oa.classList.toggle("is-oa", paper.isOpenAccess);
   link.href = href;
-  readButton.addEventListener("click", () => openReader(paper));
+  readButton.addEventListener("click", () => openReader(paper, readButton));
 
   return node;
 }
 
-function openReader(paper) {
+function openReader(paper, trigger = document.activeElement) {
   const href = bestSourceUrl(paper);
   const trace = [
     paper.doi ? `DOI: ${paper.doi.replace("https://doi.org/", "")}` : "",
     paper.pmid ? `PMID: ${String(paper.pmid).replace(/\D/g, "")}` : "",
     paper.citations === null ? "citações não informadas" : `${paper.citations} citações`,
-    `score ${paper.score}`,
+    paper.evidenceBasis ? `classificação: ${paper.evidenceBasis}` : "base da classificação não informada",
+    `prioridade de triagem ${paper.score} (heurística, não certeza clínica)`,
   ].filter(Boolean);
 
   els.readerTitle.textContent = buildPtBrTitle(paper);
   els.readerOriginalTitle.textContent = `Original: ${paper.title}`;
   els.readerTags.innerHTML = "";
-  [labelEvidence(paper.evidenceType), paper.source.includes("PubMed") ? "PubMed" : "OpenAlex", accessLabel(paper), "DOD"].forEach((tag) => {
+  [labelEvidence(paper.evidenceType), sourceDisplayLabel(paper), accessLabel(paper), "SÍNTESE DOD"].forEach((tag) => {
     const item = document.createElement("span");
     item.className = "evidence-pill";
     item.textContent = tag;
     els.readerTags.append(item);
   });
   els.readerAbstract.textContent = buildPtBrSummary(paper, 900);
+  els.readerOriginalAbstract.textContent = paper.abstract
+    ? stripHtml(paper.abstract)
+    : "Resumo original não disponível nesta base. Consulte a fonte antes de interpretar o registro.";
   els.readerSource.textContent = [paper.journal, paper.year || "ano não informado"].filter(Boolean).join(" • ");
   els.readerTrace.textContent = trace.join(" • ") || "Metadado mínimo disponível.";
   els.readerAuthors.textContent = paperAuthorsText(paper) || "Autores não identificados";
@@ -1233,14 +1305,20 @@ function openReader(paper) {
     }
   };
 
+  readerReturnFocus = trigger instanceof HTMLElement ? trigger : null;
+  setReaderBackgroundInert(true);
   els.readerModal.hidden = false;
   document.body.classList.add("modal-open");
   els.readerClose.focus();
 }
 
 function closeReader() {
+  if (els.readerModal.hidden) return;
   els.readerModal.hidden = true;
+  setReaderBackgroundInert(false);
   document.body.classList.remove("modal-open");
+  if (readerReturnFocus?.isConnected) readerReturnFocus.focus();
+  readerReturnFocus = null;
 }
 
 function render() {
@@ -1252,6 +1330,14 @@ function render() {
   filtered.forEach((paper) => fragment.append(renderCard(paper)));
   els.cards.append(fragment);
   els.emptyState.hidden = filtered.length > 0;
+  const synthesis = buildSynthesis(filtered);
+  window.dispatchEvent(new CustomEvent("dod:evidence-status", {
+    detail: {
+      empty: filtered.length === 0,
+      gap: buildGapText(synthesis),
+      total: filtered.length,
+    },
+  }));
 }
 
 function buildSynthesis(papers) {
@@ -1266,7 +1352,10 @@ function buildSynthesis(papers) {
   const pmids = visible.filter((paper) => paper.pmid).length;
   const dois = visible.filter((paper) => paper.doi).length;
   const abstracts = visible.filter((paper) => paper.abstract).length;
-  const strongEvidence = visible.filter((paper) => ["guideline", "systematic-review", "meta-analysis", "trial"].includes(paper.evidenceType)).length;
+  const strongEvidence = visible.filter((paper) =>
+    ["guideline", "systematic-review", "meta-analysis", "trial"].includes(paper.evidenceType) &&
+    paper.evidenceBasis === "Publication Type estruturado do PubMed"
+  ).length;
   const meshTerms = visible.flatMap((paper) => paper.meshTerms || []);
   const topMesh = Object.entries(
     meshTerms.reduce((acc, term) => {
@@ -1311,7 +1400,7 @@ function renderSynthesis() {
 
   els.synthesisGrid.innerHTML = `
     <div class="synthesis-block">
-      <strong>Força do conjunto</strong>
+      <strong>Metadados do conjunto</strong>
       <p>${synthesis.total} trabalhos; janela ${synthesis.window}; ${synthesis.dois} DOI; ${synthesis.pmids} PMID.</p>
     </div>
     <div class="synthesis-block">
@@ -1335,11 +1424,11 @@ function renderSynthesis() {
 
 function buildGapText(synthesis) {
   const gaps = [];
-  if (synthesis.strongEvidence < 5) gaps.push("pouca evidência forte no recorte atual");
+  if (synthesis.strongEvidence < 5) gaps.push("poucos tipos prioritários verificados por Publication Type do PubMed");
   if (synthesis.pmids < Math.ceil(synthesis.total * 0.2)) gaps.push("baixo lastro PubMed/PMID");
   if (synthesis.abstracts < Math.ceil(synthesis.total * 0.4)) gaps.push("muitos registros sem resumo");
   if (!synthesis.topMesh.length) gaps.push("sem termos MeSH suficientes");
-  return gaps.length ? gaps.join("; ") : "conjunto saudável para triagem inicial";
+  return gaps.length ? gaps.join("; ") : "metadados mínimos presentes para triagem inicial";
 }
 
 function escapeHtml(value) {
@@ -1358,7 +1447,7 @@ function exportData(type) {
   }
 
   if (type === "csv") {
-    const columns = ["title", "authors", "year", "journal", "citations", "score", "evidenceType", "doi", "pmid", "sourceUrl"];
+    const columns = ["title", "authors", "year", "journal", "citations", "score", "evidenceType", "evidenceBasis", "doi", "pmid", "sourceUrl"];
     const rows = filtered.map((paper) =>
       columns
         .map((column) => `"${String(column === "sourceUrl" ? bestSourceUrl(paper) : paper[column] ?? "").replace(/"/g, '""')}"`)
@@ -1393,7 +1482,8 @@ function buildMarkdownReport(papers) {
 - Ano: ${paper.year || "não informado"}
 - Fonte: ${paper.journal}
 - Tipo: ${labelEvidence(paper.evidenceType)}
-- Score: ${paper.score}
+- Base da classificação: ${paper.evidenceBasis || "não informada"}
+- Prioridade de triagem: ${paper.score} (heurística; não mede certeza clínica)
 - Citações: ${paper.citations}
 - DOI/PMID: ${[paper.doi, paper.pmid].filter(Boolean).join(" / ") || "não informado"}
 - URL: ${bestSourceUrl(paper)}

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "sh ./scripts/prepare-public.sh",
+    "build:sites": "npm run build && sh ./scripts/prepare-sites-dist.sh",
     "dev": "node ./node_modules/wrangler/bin/wrangler.js dev --local --live-reload",
     "check:syntax": "node ./scripts/check-syntax.mjs",
     "check:architecture": "node ./scripts/verify-architecture.mjs",

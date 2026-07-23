@@ -323,12 +323,16 @@ export function analyzeEcgRecording(recording, requestedLead = "") {
   }
 
   const automaticAxes = {
-    ecg_measurements: qualityUsable && enoughBeats && rate !== null && rate >= 50 && rate <= 100 ? "Sem alteração aparente" : "Achado a revisar",
-    ecg_rhythm: enoughBeats && rhythmLabel === "RR predominantemente regular" ? "Sem alteração aparente" : enoughBeats ? "Achado a revisar" : "Não avaliado",
+    ecg_technical: quality.score >= 80 ? "Revisado — sem alerta" : "Limitado / inconclusivo",
+    ecg_rate_regularity: enoughBeats && rate !== null && rate >= 50 && rate <= 100 && irregularRatio <= 0.2
+      ? "Revisado — sem alerta"
+      : enoughBeats ? "Revisado — achado presente" : "Limitado / inconclusivo",
+    ecg_rhythm: "Não avaliado",
+    ecg_axis: "Não avaliado",
     ecg_conduction_intervals: "Não avaliado",
+    ecg_qrs_morphology: "Não avaliado",
     ecg_st_t_injury: "Não avaliado",
     ecg_overload_remodeling: "Não avaliado",
-    ecg_ectopy_rate: enoughBeats && rate !== null && rate >= 50 && rate <= 100 && irregularRatio <= 0.2 ? "Sem alteração aparente" : enoughBeats ? "Achado a revisar" : "Não avaliado",
   };
 
   return {

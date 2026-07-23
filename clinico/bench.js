@@ -4,10 +4,9 @@
 
    Faz duas coisas:
    1. Revelação progressiva — abre/fecha os painéis sob demanda.
-   2. A REGRA FORTE — o aviso de honestidade se revela sozinho quando a
-      evidência do conjunto é fraca, usando a própria função de lacunas do
-      motor (buildGapText) como fonte única da verdade. Nunca pode ser
-      desligado: é a coluna ética do projeto virando comportamento.
+   2. A REGRA FORTE — o aviso de honestidade se revela sozinho quando o motor
+      publica lacunas do recorte. Nunca pode ser desligado: é a coluna ética
+      do projeto virando comportamento.
    ========================================================================== */
 
 (function bench() {
@@ -46,15 +45,15 @@
     });
   }
 
-  toggles.forEach((toggle, index) => {
+  toggles.forEach((toggle) => {
     toggle.addEventListener("click", () => openPanel(toggle));
-    if (index === 0) openPanel(toggle);
   });
 
   /* ---- 2. A regra forte: honestidade que se auto-revela ------------------ */
-  const HEALTHY = "conjunto saudável para triagem inicial";
+  const HEALTHY = "metadados mínimos presentes para triagem inicial";
   const banner = document.getElementById("honestyBanner");
   const bannerText = document.getElementById("honestyText");
+  let latestEvidenceStatus = null;
 
   // Traduz as lacunas cruas do motor numa frase legível, sem suavizar o aviso.
   function phraseFromGaps(gapText) {
@@ -69,22 +68,6 @@
     return "Neste recorte: " + joined + ".";
   }
 
-  function safeGapRead() {
-    // Usa as funções do próprio motor. Se algo não estiver disponível,
-    // a falha é silenciosa — nunca um falso "está tudo bem".
-    try {
-      if (typeof getFilteredPapers !== "function") return null;
-      if (typeof buildSynthesis !== "function") return null;
-      if (typeof buildGapText !== "function") return null;
-      const filtered = getFilteredPapers();
-      if (!filtered || !filtered.length) return { empty: true };
-      const synthesis = buildSynthesis(filtered);
-      return { empty: false, gap: buildGapText(synthesis) };
-    } catch (err) {
-      return null;
-    }
-  }
-
   function refreshHonesty() {
     if (!banner || !bannerText) return;
 
@@ -94,7 +77,7 @@
       return;
     }
 
-    const read = safeGapRead();
+    const read = latestEvidenceStatus;
 
     // Sem leitura confiável ou sem resultados: não afirma nada.
     if (!read || read.empty) {
@@ -114,25 +97,9 @@
   // A porta de acesso chama isto ao entrar no clínico, religando a honestidade.
   window.__academicActivateHonesty = refreshHonesty;
 
-  // Observa o grid de cards: toda vez que uma busca ou filtro re-renderiza,
-  // reavaliamos a honestidade. Decoupled do motor, sem tocá-lo.
-  const cards = document.getElementById("cards");
-  if (cards) {
-    let pending = null;
-    const observer = new MutationObserver(() => {
-      if (pending) clearTimeout(pending);
-      pending = setTimeout(refreshHonesty, 120);
-    });
-    observer.observe(cards, { childList: true });
-  }
-
-  // Reavalia também quando os filtros de qualidade mudam (eles re-renderizam
-  // os cards, mas garantimos a checagem mesmo que o resultado visual não mude).
-  ["strictEvidence", "cleanSources", "minCitations", "yearSelect", "sortSelect"].forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener("change", () => setTimeout(refreshHonesty, 120));
+  // Contrato explícito entre o motor modular e a camada ética.
+  window.addEventListener("dod:evidence-status", (event) => {
+    latestEvidenceStatus = event.detail || null;
+    refreshHonesty();
   });
-
-  // Primeira avaliação após o carregamento inicial da biblioteca.
-  setTimeout(refreshHonesty, 800);
 })();
