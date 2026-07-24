@@ -15,6 +15,7 @@ import {
 } from "../clinical-taxonomy.js";
 import { createPaper, paperSourceUrl } from "../paper-contract.js";
 import { researchCards } from "../scientific-library-data.js";
+import { evaluateClinicalInput, normalizeClinicalSearchTopic } from "../clinico/clinical-flow.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const appFiles = ["app.js", "clinico/app.js", "dodperoformance.main/clinico/app.js"];
@@ -52,6 +53,42 @@ const sample = createPaper({ origin: "curated", id: researchCards[0].id, title: 
 assert.equal(sample.year, null);
 assert.deepEqual(sample.authors, []);
 assert.equal(paperSourceUrl(sample), researchCards[0].source);
+
+assert.equal(normalizeClinicalSearchTopic("dor torácica"), "chest pain", "adaptação clínica PT-BR/EN divergente");
+const incompleteClinicalCase = evaluateClinicalInput({
+  age: "",
+  symptom: "",
+  durationDays: "",
+  severity: "",
+  fever: false,
+  dyspnea: false,
+  chestPain: false,
+  dehydration: false,
+  pregnancy: false,
+  immunosuppression: false,
+});
+const alertClinicalCase = evaluateClinicalInput({
+  age: "42",
+  symptom: "dor torácica",
+  durationDays: "1",
+  severity: "Intensa",
+  fever: false,
+  dyspnea: false,
+  chestPain: true,
+  dehydration: false,
+  pregnancy: false,
+  immunosuppression: false,
+});
+assert.equal(incompleteClinicalCase.status, "incomplete", "caso incompleto não foi bloqueado");
+assert.equal(alertClinicalCase.status, "alert", "sinal clínico informado não gerou alerta");
+
+const clinicalHtml = readFileSync(resolve(root, "clinico/index.html"), "utf8");
+const clinicalApp = readFileSync(resolve(root, "clinico/app.js"), "utf8");
+assert.ok(clinicalHtml.includes("Resultado estruturado"), "fluxo clínico estruturado ausente");
+assert.ok(!clinicalHtml.includes('class="cards-grid"'), "grade de cards ainda presente no Clínico");
+assert.ok(clinicalHtml.includes('<option value="pubmed" selected>PubMed</option>'), "Clínico não está fixado no PubMed");
+assert.ok(!clinicalApp.includes("output_data_1779051008"), "base local de machine learning ainda referenciada pelo Clínico");
+assert.ok(!/OpenAlex|openalex/.test(clinicalApp), "Clínico ainda contém integração OpenAlex");
 
 const expectedEcgTopicIds = [
   "ecg_technical",
@@ -108,6 +145,8 @@ if (process.argv.includes("--public")) {
     "public/paper-contract.js",
     "public/scientific-library-data.js",
     "public/clinico/index.html",
+    "public/clinico/clinical-flow.js",
+    "public/clinico/clinical-ui.js",
     "public/dodperoformance.main/ECG/index.html",
   ];
   requiredPublicFiles.forEach((file) => assert.ok(existsSync(resolve(root, file)), `arquivo público ausente: ${file}`));
@@ -121,6 +160,7 @@ if (process.argv.includes("--public")) {
     .forEach(verifyHtmlReferences);
 
   assert.ok(!existsSync(resolve(root, "public/dodperoformance.main/clinico")), "rota clínica histórica ainda foi publicada");
+  assert.ok(!existsSync(resolve(root, "public/clinico/output_data_1779051008.json")), "base local de machine learning ainda foi publicada");
   ["README_DEPLOY.md", "clinico-gate.js", "wrangler.toml"].forEach((file) => {
     assert.ok(!existsSync(resolve(root, "public/clinico", file)), `arquivo interno exposto no pacote: clinico/${file}`);
   });

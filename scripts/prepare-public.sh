@@ -23,11 +23,12 @@ cp \
 cp \
   clinico/index.html \
   clinico/app.js \
+  clinico/clinical-flow.js \
+  clinico/clinical-ui.js \
   clinico/styles.css \
   clinico/bench.css \
   clinico/bench.js \
   clinico/gate.js \
-  clinico/output_data_1779051008.json \
   "$stage_dir/clinico/"
 
 # ECG is the only public module under the historical URL namespace.

@@ -10,6 +10,8 @@ const entries = [
   "paper-contract.js",
   "scientific-library-data.js",
   "clinico/app.js",
+  "clinico/clinical-flow.js",
+  "clinico/clinical-ui.js",
   "clinico/bench.js",
   "clinico/gate.js",
   "dodperoformance.main/ECG",

@@ -1,27 +1,21 @@
 import {
   classifyClinicalTopicIds,
   clinicalTopicsById,
-  defaultLibraryGroups,
-  defaultLibraryTopic,
   englishSearchTerms as centralEnglishSearchTerms,
   phraseTranslations as centralPhraseTranslations,
   ptBrSearchTerms as centralPtBrSearchTerms,
   wordTranslations as centralWordTranslations,
 } from "../clinical-taxonomy.js";
 import { createPaper, paperAuthorsText, paperSourceUrl } from "../paper-contract.js";
+import { normalizeClinicalSearchTopic } from "./clinical-flow.js?v=20260724-search";
 
-const DATA_URL = "./output_data_1779051008.json";
-const OPENALEX_URL = "https://api.openalex.org/works";
 const PUBMED_BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
 const RXNORM_DRUGS_URL = "https://rxnav.nlm.nih.gov/REST/drugs.json";
 const RXNORM_APPROXIMATE_URL = "https://rxnav.nlm.nih.gov/REST/approximateTerm.json";
 const PROJECT_STORAGE_KEY = "dodResearchProjects";
 const SEARCH_CACHE_KEY = "dodResearchCache";
-const SEARCH_CACHE_VERSION = "v2";
+const SEARCH_CACHE_VERSION = "v3-pubmed-only";
 const SEARCH_CACHE_TTL_MS = 1000 * 60 * 60 * 12;
-const DEFAULT_LIBRARY_TOPIC = defaultLibraryTopic;
-const DEFAULT_LIBRARY_TOPICS = defaultLibraryGroups.map((group) => group.query);
-const DEFAULT_LIBRARY_LABELS = defaultLibraryGroups.map((group) => group.label);
 
 const noisyDomains = [
   "researchgate.net",
@@ -114,7 +108,7 @@ const state = {
   minCitations: 0,
   cleanSources: true,
   strictEvidence: false,
-  dataSource: "local",
+  dataSource: "PubMed",
   lastTopic: "",
   synthesis: null,
   expandedTopic: "",
@@ -237,17 +231,6 @@ function textFrom(node, selector) {
 
 function allTextFrom(node, selector) {
   return [...node.querySelectorAll(selector)].map((item) => item.textContent.trim()).filter(Boolean);
-}
-
-function abstractFromInvertedIndex(index) {
-  if (!index) return "";
-  const words = [];
-  Object.entries(index).forEach(([word, positions]) => {
-    positions.forEach((position) => {
-      words[position] = word;
-    });
-  });
-  return words.filter(Boolean).join(" ");
 }
 
 function classifyEvidenceType(type) {
@@ -420,6 +403,12 @@ function expandPortugueseQuery(topic) {
   return topic;
 }
 
+function expandClinicalQuery(topic) {
+  const clinicalTopic = normalizeClinicalSearchTopic(topic);
+  if (normalizeText(clinicalTopic) !== normalizeText(topic)) return clinicalTopic;
+  return expandPortugueseQuery(clinicalTopic);
+}
+
 function getSearchTerms(query) {
   const normalized = normalizeText(query);
   const phrases = centralEnglishSearchTerms.filter((term) => normalized.includes(normalizeText(term)));
@@ -454,52 +443,6 @@ function rankBySearchRelevance(papers, query) {
   const relevant = ranked.filter((paper) => paper.searchRelevance > 0);
   const pool = relevant.length >= Math.min(8, ranked.length) ? relevant : ranked;
   return pool.sort((a, b) => b.searchRelevance - a.searchRelevance || b.score - a.score || b.citations - a.citations);
-}
-
-function diversifyByConcept(papers) {
-  return diversifyByKey(papers, (paper) => getPaperConcepts(paper, 1)[0] || "outros");
-}
-
-function diversifyByKey(papers, getKey) {
-  const groups = papers.reduce((acc, paper) => {
-    const key = getKey(paper);
-    if (!acc.has(key)) acc.set(key, []);
-    acc.get(key).push(paper);
-    return acc;
-  }, new Map());
-  const diversified = [];
-  while ([...groups.values()].some((group) => group.length)) {
-    [...groups.keys()].forEach((key) => {
-      const item = groups.get(key).shift();
-      if (item) diversified.push(item);
-    });
-  }
-  return diversified;
-}
-
-function dedupePreservingOrder(papers) {
-  const seen = new Set();
-  return papers.filter((paper) => {
-    const key = (paper.doi || paper.pmid || paper.title).toLowerCase().replace(/[^a-z0-9]+/g, "");
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function rankDefaultLibraryPapers(papers, expandedTopics) {
-  const groups = expandedTopics.map((query, topicIndex) => {
-    const group = papers.filter((paper) => paper.libraryTopicIndex === topicIndex);
-    return rankBySearchRelevance(dedupePapers(group), query);
-  });
-  const interleaved = [];
-  while (groups.some((group) => group.length)) {
-    groups.forEach((group) => {
-      const item = group.shift();
-      if (item) interleaved.push(item);
-    });
-  }
-  return dedupePreservingOrder(interleaved);
 }
 
 function labelEvidence(type) {
@@ -577,54 +520,6 @@ function enrichPaper(paper) {
   };
   normalized.score = scorePaper(normalized);
   return normalized;
-}
-
-function normalizeLocalPaper(paper) {
-  return enrichPaper(createPaper({
-    origin: "local",
-    title: paper.paper_title || "Título não identificado",
-    authors: paper.authors ? String(paper.authors).split(/,\s*/) : [],
-    year: Number(paper.publication_year) || null,
-    journal: paper.journal_name && paper.journal_name !== "null" ? paper.journal_name : null,
-    citations: paper.citation_count === null || paper.citation_count === undefined || paper.citation_count === "" ? null : Number(paper.citation_count),
-    sourceUrl: paper.url || null,
-    doi: "",
-    pmid: "",
-    abstract: "",
-    source: "BrowserAct JSON",
-    evidenceType: classifyEvidenceType("article"),
-    evidenceBasis: "tipo genérico da base local",
-    isOpenAccess: null,
-  }));
-}
-
-function normalizeOpenAlexWork(work) {
-  const location = work.primary_location || {};
-  const source = location.source || {};
-  const url = location.landing_page_url || work.doi || work.id || "#";
-  const authors = (work.authorships || [])
-    .slice(0, 8)
-    .map((item) => item.author?.display_name)
-    .filter(Boolean)
-    .join(", ");
-
-  return enrichPaper({ ...createPaper({
-    origin: "openalex",
-    title: work.display_name || "Título não identificado",
-    authors: authors ? authors.split(", ") : [],
-    year: Number(work.publication_year) || null,
-    journal: source.display_name || null,
-    citations: Number.isFinite(work.cited_by_count) ? work.cited_by_count : null,
-    sourceUrl: url,
-    publisher: (source.host_organization_lineage_names || []).join(", "),
-    doi: work.doi || "",
-    pmid: work.ids?.pmid || "",
-    abstract: abstractFromInvertedIndex(work.abstract_inverted_index),
-    source: "OpenAlex",
-    evidenceType: classifyEvidenceType(work.type),
-    evidenceBasis: "tipo documental informado pelo OpenAlex",
-    isOpenAccess: Boolean(work.open_access?.is_oa),
-  }), domainOverride: source.host_organization_name || source.display_name || "" });
 }
 
 function normalizePubMedArticle(article) {
@@ -729,7 +624,13 @@ function syncActiveTopicChip(topic) {
 async function loadDefaultLibrary() {
   els.topicInput.value = "";
   syncActiveTopicChip("");
-  await loadLocalData();
+  clearCardsForSearch();
+  state.lastTopic = "";
+  state.expandedTopic = "";
+  state.synthesis = buildSynthesis([]);
+  state.dataSource = "PubMed";
+  render();
+  setStatus("Informe um tema clínico ou use a queixa principal para pesquisar no PubMed.");
 }
 
 function clearCardsForSearch() {
@@ -757,13 +658,13 @@ function setupEvents() {
     event.preventDefault();
     syncActiveTopicChip(els.topicInput.value.trim());
     if (!els.topicInput.value.trim()) {
-      loadDefaultLibrary();
+      setStatus("Informe um tema clínico para pesquisar no PubMed.", true);
+      els.topicInput.focus();
       return;
     }
     searchScientific();
   });
 
-  els.loadLocalButton.addEventListener("click", () => loadLocalData());
   els.copyStrategyButton.addEventListener("click", () => copySearchStrategy());
   els.exportJsonButton.addEventListener("click", () => exportData("json"));
   els.exportCsvButton.addEventListener("click", () => exportData("csv"));
@@ -848,21 +749,12 @@ function setupEvents() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !els.readerModal.hidden) closeReader();
   });
+  window.addEventListener("dod:clear-evidence", () => {
+    void loadDefaultLibrary();
+  });
 
   refreshProjectSelect();
   updatePharmaSourceLinks();
-}
-
-async function fetchOpenAlex(topic, fromYear, limit) {
-  const params = new URLSearchParams({
-    search: topic,
-    per_page: String(Math.min(limit, 200)),
-    filter: `from_publication_date:${fromYear}-01-01`,
-  });
-  const response = await fetch(`${OPENALEX_URL}?${params.toString()}`);
-  if (!response.ok) throw new Error(`OpenAlex HTTP ${response.status}`);
-  const payload = await response.json();
-  return (payload.results || []).map(normalizeOpenAlexWork);
 }
 
 async function fetchPubMed(topic, fromYear, limit) {
@@ -898,7 +790,7 @@ async function searchScientific(options = {}) {
   const topic = options.queryTopic || displayTopic || options.fallbackTopic || "";
   if (!topic) return;
   const rawTopics = options.fallbackTopics?.length && !displayTopic && !options.queryTopic ? options.fallbackTopics : [topic];
-  const expandedTopics = rawTopics.map(expandPortugueseQuery);
+  const expandedTopics = rawTopics.map(expandClinicalQuery);
   const expandedTopic = expandedTopics.join(" ");
   const publicLabel = options.publicLabel || options.displayTopic || displayTopic || topic;
 
@@ -911,16 +803,14 @@ async function searchScientific(options = {}) {
   setLoading(true, options.publicLabel ? `Preparando ${publicLabel}...` : `Buscando "${publicLabel}" em ${sourceLabel(source)}...`);
   try {
     const jobs = [];
-    const isDefaultLibrary = Boolean(options.fallbackTopics?.length && !els.topicInput.value.trim());
     const perTopicLimit = rawTopics.length > 1 ? Math.max(10, Math.ceil(limit / rawTopics.length)) : limit;
     expandedTopics.forEach((query, topicIndex) => {
       const tagTopic = (items) => items.map((paper) => ({
         ...paper,
         libraryTopicIndex: topicIndex,
-        libraryTopicLabel: isDefaultLibrary ? DEFAULT_LIBRARY_LABELS[topicIndex] || "" : "",
+        libraryTopicLabel: "",
       }));
-      if (source === "openalex" || source === "both" || isDefaultLibrary) jobs.push(fetchOpenAlex(query, fromYear, perTopicLimit).then(tagTopic));
-      if (!isDefaultLibrary && (source === "pubmed" || source === "both")) jobs.push(fetchPubMed(query, fromYear, perTopicLimit).then(tagTopic));
+      jobs.push(fetchPubMed(query, fromYear, perTopicLimit).then(tagTopic));
     });
     const settled = await Promise.allSettled(jobs);
     let papers = settled.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
@@ -931,11 +821,9 @@ async function searchScientific(options = {}) {
       else throw new Error(errors.join(" | "));
     }
 
-    state.papers = (isDefaultLibrary
-      ? rankDefaultLibraryPapers(papers, expandedTopics)
-      : rankBySearchRelevance(dedupePapers(papers), expandedTopic))
+    state.papers = rankBySearchRelevance(dedupePapers(papers), expandedTopic)
       .map((paper, libraryOrder) => ({ ...paper, libraryOrder }));
-    state.preserveLibraryOrder = isDefaultLibrary;
+    state.preserveLibraryOrder = false;
     state.dataSource = sourceLabel(source);
     state.lastTopic = topic;
     state.expandedTopic = expandedTopic;
@@ -951,17 +839,17 @@ async function searchScientific(options = {}) {
       setStatus(`${state.dataSource} retornou ${state.papers.length} trabalhos para "${publicLabel}".${expansionNote}${partialNote}`);
     }
   } catch (error) {
-    setStatus(`Falha na busca: ${error.message}. O JSON local continua disponível.`, true);
-    if (!state.papers.length) await loadLocalData();
+    state.papers = [];
+    state.synthesis = buildSynthesis([]);
+    render({ error: true });
+    setStatus(`Falha na busca PubMed: ${error.message}. Nenhuma base local foi usada como substituição.`, true);
   } finally {
     setLoading(false);
   }
 }
 
-function sourceLabel(source) {
-  if (source === "both") return "OpenAlex + PubMed";
-  if (source === "pubmed") return "PubMed";
-  return "OpenAlex";
+function sourceLabel() {
+  return "PubMed";
 }
 
 function inferPharmaFromTopic() {
@@ -1105,32 +993,8 @@ async function fetchRxNormConcepts(drug) {
     .slice(0, 6);
 }
 
-async function loadLocalData() {
-  setLoading(true, "Carregando JSON local...");
-  try {
-    const response = await fetch(DATA_URL);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const raw = await response.json();
-    state.papers = dedupePapers(raw.map(normalizeLocalPaper));
-    state.dataSource = "Biblioteca local";
-    state.lastTopic = "Biblioteca científica DOD";
-    state.synthesis = buildSynthesis(state.papers);
-    resetYearOptions();
-    render();
-    setStatus(`Biblioteca local carregada com ${state.papers.length} registros; confirme DOI, PMID e resumo na fonte original.`);
-  } catch (error) {
-    els.cards.innerHTML = "";
-    els.emptyState.hidden = false;
-    els.emptyState.textContent = `Não consegui carregar ${DATA_URL}: ${error.message}`;
-    setStatus(`Falha ao carregar JSON local: ${error.message}`, true);
-  } finally {
-    setLoading(false);
-  }
-}
-
 function setLoading(isLoading, message) {
   els.searchButton.disabled = isLoading;
-  els.loadLocalButton.disabled = isLoading;
   if (message) setStatus(message);
 }
 
@@ -1194,9 +1058,6 @@ function renderStats(filtered) {
 
 function sourceDisplayLabel(paper) {
   if (paper.origin === "pubmed" || paper.source === "PubMed") return "PUBMED";
-  if (paper.origin === "openalex" || paper.source === "OpenAlex") return "OPENALEX";
-  if (paper.origin === "local") return "BASE LOCAL";
-  if (paper.source.includes("+")) return "FONTES COMBINADAS";
   return paper.source || "FONTE NÃO IDENTIFICADA";
 }
 
@@ -1321,16 +1182,24 @@ function closeReader() {
   readerReturnFocus = null;
 }
 
-function render() {
+function render(options = {}) {
   const filtered = getFilteredPapers();
   renderStats(filtered);
   if (state.synthesis) renderSynthesis();
-  els.cards.innerHTML = "";
-  const fragment = document.createDocumentFragment();
-  filtered.forEach((paper) => fragment.append(renderCard(paper)));
-  els.cards.append(fragment);
-  els.emptyState.hidden = filtered.length > 0;
   const synthesis = buildSynthesis(filtered);
+  els.cards.replaceChildren();
+  els.emptyState.hidden = true;
+  window.dispatchEvent(new CustomEvent("dod:evidence-results", {
+    detail: {
+      papers: filtered,
+      synthesis,
+      query: state.lastTopic,
+      source: "PubMed",
+      hasSearch: Boolean(state.lastTopic),
+      totalRetrieved: state.papers.length,
+      error: Boolean(options.error),
+    },
+  }));
   window.dispatchEvent(new CustomEvent("dod:evidence-status", {
     detail: {
       empty: filtered.length === 0,
@@ -1532,8 +1401,7 @@ async function copySearchStrategy() {
     .map((term) => term.replace(/[^\w-]/g, ""))
     .filter(Boolean);
   const pubmed = `${terms.map((term) => `"${term}"[Title/Abstract]`).join(" AND ")} AND ("${fromYear}"[Date - Publication] : "3000"[Date - Publication])`;
-  const openAlex = `search="${expandedTopic}" filter=from_publication_date:${fromYear}-01-01`;
-  const strategy = `Tema original: ${topic}\nTema expandido: ${expandedTopic}\nBase: ${sourceLabel(els.sourceSelect.value)}\nOpenAlex: ${openAlex}\nPubMed: ${pubmed}`;
+  const strategy = `Tema original: ${topic}\nTema expandido: ${expandedTopic}\nBase: PubMed\nPubMed: ${pubmed}`;
 
   try {
     await navigator.clipboard.writeText(strategy);

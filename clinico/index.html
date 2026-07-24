@@ -20,7 +20,7 @@
         </a>
         <nav class="site-nav" aria-label="Navegação principal">
           <a href="../index.html">Cards</a>
-          <a class="is-active" href="#cards">Pesquisa<span class="floor-tag">ACADÊMICA</span></a>
+          <a class="is-active" href="#research">Pesquisa<span class="floor-tag">ACADÊMICA</span></a>
           <a href="../dodperoformance.main/ECG/">ECG</a>
         </nav>
       </div>
@@ -103,7 +103,7 @@
         </p>
       </section>
 
-      <section class="search-panel" aria-label="Busca científica">
+      <section class="search-panel" id="research" aria-label="Busca científica">
         <form class="research-form" id="researchForm">
           <label class="field field-wide">
             <span>Pergunta ou tema clínico</span>
@@ -220,20 +220,11 @@
               <select id="sortSelect" aria-describedby="qualityScoringNote">
                 <option value="score-desc">Prioridade de triagem</option>
                 <option value="year-desc">Mais recentes</option>
-                <option value="citations-desc">Mais citados</option>
               </select>
-            </div>
-            <div class="field-stack">
-              <label for="minCitations">Citações mínimas</label>
-              <input id="minCitations" type="number" value="0" min="0" />
             </div>
             <div class="check-row">
               <input id="strictEvidence" type="checkbox" />
               <label for="strictEvidence">Só tipos prioritários verificados no PubMed</label>
-            </div>
-            <div class="check-row">
-              <input id="cleanSources" type="checkbox" checked />
-              <label for="cleanSources">Ocultar fontes frágeis</label>
             </div>
           </div>
         </div>
@@ -254,14 +245,113 @@
         </div>
       </section>
 
-      <section class="cards-grid" id="cards" aria-live="polite"></section>
-      <p class="empty-state" id="emptyState" hidden>Nenhum artigo bateu com os filtros atuais.</p>
+      <section class="clinical-workbench" aria-labelledby="clinicalWorkbenchTitle">
+        <header class="clinical-workbench__intro">
+          <div>
+            <p class="eyebrow">MÓDULO CLÍNICO EXPERIMENTAL</p>
+            <h2 id="clinicalWorkbenchTitle">Fluxo mínimo para organizar casos fictícios.</h2>
+            <p>
+              Use somente dados inventados. O módulo estrutura o que foi informado e recupera
+              evidências PubMed/MeSH, sem concluir diagnóstico ou prescrever.
+            </p>
+          </div>
+          <span class="clinical-scope">ACADÊMICO · SEM DADOS IDENTIFICÁVEIS</span>
+        </header>
 
-      <!-- Configuração interna que o motor lê. Presente, mas oculta (como no andar de baixo). -->
+        <div class="clinical-grid">
+          <form class="clinical-form" id="clinicalCaseForm" novalidate>
+            <div class="clinical-field">
+              <label for="clinicalAge">Idade em anos <span aria-hidden="true">*</span></label>
+              <input id="clinicalAge" inputmode="numeric" placeholder="Ex.: 42" />
+            </div>
+            <div class="clinical-field">
+              <label for="clinicalSymptom">Queixa principal <span aria-hidden="true">*</span></label>
+              <input id="clinicalSymptom" type="text" placeholder="Ex.: tosse e febre" />
+            </div>
+            <div class="clinical-field">
+              <label for="clinicalDuration">Duração em dias <span aria-hidden="true">*</span></label>
+              <input id="clinicalDuration" inputmode="numeric" placeholder="Ex.: 3" />
+            </div>
+            <div class="clinical-field">
+              <label for="clinicalSeverity">Gravidade percebida <span aria-hidden="true">*</span></label>
+              <select id="clinicalSeverity">
+                <option value="">Selecionar</option>
+                <option value="Leve">Leve</option>
+                <option value="Moderada">Moderada</option>
+                <option value="Intensa">Intensa</option>
+              </select>
+            </div>
+
+            <fieldset class="clinical-signals">
+              <legend>Sinais e contexto</legend>
+              <label><input id="clinicalFever" type="checkbox" /> <span>Febre</span></label>
+              <label><input id="clinicalDyspnea" type="checkbox" /> <span>Dispneia</span></label>
+              <label><input id="clinicalChestPain" type="checkbox" /> <span>Dor torácica</span></label>
+              <label><input id="clinicalDehydration" type="checkbox" /> <span>Sinais de desidratação</span></label>
+              <label><input id="clinicalPregnancy" type="checkbox" /> <span>Gestação</span></label>
+              <label><input id="clinicalImmunosuppression" type="checkbox" /> <span>Imunossupressão</span></label>
+            </fieldset>
+
+            <div class="clinical-form__actions">
+              <button class="ghost-button is-primary" type="button" id="searchClinicalEvidence">
+                Pesquisar a queixa no PubMed
+              </button>
+              <button class="ghost-button" type="button" id="clearClinicalCase">Limpar caso</button>
+            </div>
+          </form>
+
+          <aside class="clinical-result" aria-labelledby="clinicalResultTitle">
+            <div class="clinical-result__head">
+              <h2 id="clinicalResultTitle">Resultado estruturado</h2>
+              <span class="clinical-result__status" id="clinicalResultStatus" data-status="incomplete">
+                Caso incompleto
+              </span>
+            </div>
+
+            <section class="clinical-result__section">
+              <h3>Fatos informados</h3>
+              <ul id="clinicalFacts"></ul>
+            </section>
+            <section class="clinical-result__section">
+              <h3>Interpretação</h3>
+              <p id="clinicalInterpretation"></p>
+            </section>
+            <section class="clinical-result__section">
+              <h3>Alertas</h3>
+              <ul id="clinicalAlerts"></ul>
+            </section>
+            <section class="clinical-result__section">
+              <h3>Próximos passos</h3>
+              <ul id="clinicalNextSteps"></ul>
+            </section>
+
+            <section class="clinical-result__section clinical-evidence" aria-labelledby="clinicalEvidenceTitle">
+              <div class="clinical-evidence__head">
+                <h3 id="clinicalEvidenceTitle">Evidências PubMed/MeSH</h3>
+                <span><strong id="clinicalEvidenceCount">0</strong> resultados</span>
+              </div>
+              <p class="clinical-evidence__state" id="clinicalEvidenceState"></p>
+              <div class="clinical-mesh" id="clinicalMeshTerms" aria-label="Termos MeSH recuperados"></div>
+              <ol class="clinical-evidence-list" id="clinicalEvidenceList"></ol>
+            </section>
+
+            <section class="clinical-result__section clinical-limits">
+              <h3>Limites</h3>
+              <ul id="clinicalLimits"></ul>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <!-- Configuração interna preservada para o motor PubMed, sem renderização de cards. -->
       <section class="engine-hidden" aria-hidden="true">
-        <select id="sourceSelect"><option value="both" selected>OpenAlex + PubMed</option></select>
+        <select id="sourceSelect"><option value="pubmed" selected>PubMed</option></select>
         <input id="fromYearInput" type="number" value="2020" />
-        <select id="resultLimit"><option value="50" selected>50</option></select>
+        <select id="resultLimit"><option value="30" selected>30</option></select>
+        <input id="minCitations" type="number" value="0" min="0" />
+        <input id="cleanSources" type="checkbox" checked />
+        <div id="cards"></div>
+        <p id="emptyState" hidden></p>
         <button type="button" id="loadLocalButton"></button>
         <button type="button" id="copyStrategyButton"></button>
         <button type="button" id="exportVancouverButton"></button>
@@ -282,63 +372,24 @@
       </section>
     </main>
 
-    <template id="cardTemplate">
-      <article class="paper-card">
-        <div class="card-visual">
-          <span class="card-code"></span>
-        </div>
-        <div class="tag-row">
-          <span class="evidence-pill"></span>
-          <span class="source-pill"></span>
-          <span class="oa-pill"></span>
-        </div>
-        <h2></h2>
-        <p class="abstract"></p>
-        <p class="journal"></p>
-        <div class="card-actions">
-          <a class="source-link" target="_blank" rel="noopener noreferrer">fonte científica</a>
-          <button class="read-button" type="button">ler</button>
-        </div>
-      </article>
-    </template>
-
-    <div class="reader-modal" id="readerModal" role="dialog" aria-modal="true" aria-labelledby="readerTitle" hidden>
-      <div class="reader-backdrop" id="readerBackdrop"></div>
-      <article class="reader-panel">
-        <header class="reader-head">
-          <div>
-            <p class="eyebrow">LEITURA</p>
-            <h2 id="readerTitle"></h2>
-            <p class="reader-original-title" id="readerOriginalTitle"></p>
-          </div>
-          <button class="reader-close" type="button" id="readerClose" aria-label="Fechar leitura">×</button>
-        </header>
-        <div class="reader-tags" id="readerTags"></div>
-        <section class="reader-section">
-          <h3>Orientação de leitura gerada</h3>
-          <p id="readerAbstract"></p>
-        </section>
-        <section class="reader-section">
-          <h3>Resumo original</h3>
-          <p id="readerOriginalAbstract"></p>
-        </section>
-        <section class="reader-grid">
-          <div><h3>Fonte</h3><p id="readerSource"></p></div>
-          <div><h3>Rastreio</h3><p id="readerTrace"></p></div>
-        </section>
-        <section class="reader-section">
-          <h3>Autores</h3>
-          <p id="readerAuthors"></p>
-        </section>
-        <footer class="reader-actions">
-          <a class="source-link" id="readerSourceLink" target="_blank" rel="noopener noreferrer">abrir fonte confiável</a>
-          <button class="read-button" type="button" id="readerCopy">copiar referência</button>
-        </footer>
-      </article>
+    <div class="reader-modal" id="readerModal" hidden aria-hidden="true">
+      <div id="readerBackdrop"></div>
+      <div id="readerClose"></div>
+      <div id="readerTitle"></div>
+      <div id="readerOriginalTitle"></div>
+      <div id="readerTags"></div>
+      <div id="readerAbstract"></div>
+      <div id="readerOriginalAbstract"></div>
+      <div id="readerSource"></div>
+      <div id="readerTrace"></div>
+      <div id="readerAuthors"></div>
+      <a id="readerSourceLink"></a>
+      <button id="readerCopy" type="button"></button>
     </div>
 
-    <!-- Motor reaproveitado, idêntico ao baseline -->
-    <script type="module" src="./app.js?v=20260723-clinical-trust"></script>
+    <!-- Interface clínica e motor científico PubMed/MeSH -->
+    <script type="module" src="./clinical-ui.js?v=20260724-audit2"></script>
+    <script type="module" src="./app.js?v=20260724-audit2"></script>
     <!-- Camada acadêmica: revelação progressiva + regra forte da honestidade -->
     <script src="./bench.js?v=20260723-clinical-trust"></script>
     <!-- Cadastro acadêmico local e gratuito -->
