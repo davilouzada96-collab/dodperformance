@@ -12,6 +12,7 @@ mkdir -p "$stage_dir/clinico" "$stage_dir/dodperoformance.main"
 cp \
   index.html \
   app.js \
+  app-scientific-sections-20260730.js \
   scientific-library-data.js \
   paper-contract.js \
   clinical-taxonomy.js \
