@@ -52,11 +52,11 @@ export const clinicalTopics = definitions.map(([id, labelPtBr, terms, parentId =
 export const clinicalTopicsById = new Map(clinicalTopics.map((topic) => [topic.id, topic]));
 
 export const defaultLibraryGroups = [
-  ["neuro_recovery", "neuroplasticidade e recuperação", ["neuroplasticity", "motor_control_learning", "pain", "inflammation", "recovery_rehabilitation"], "neuroplasticity motor learning pain inflammation muscle recovery"],
-  ["strength_fatigue_performance", "força, fadiga e performance", ["strength_power", "fatigue", "sports_performance"], "muscle strength fatigue sports performance"],
-  ["autonomic_sleep_recovery", "HRV, sono e recuperação", ["autonomic_variability", "sleep_circadian", "recovery_rehabilitation"], "heart rate variability sleep recovery"],
-  ["headache_vestibular", "cefaleia, vertigem e equilíbrio", ["headache_migraine", "vestibular_balance"], "headache emergency dizziness vertigo balance"],
-  ["sepsis_respiratory", "sepse e respiração aguda", ["sepsis", "acute_respiratory_failure", "clinical_assessment"], "sepsis acute respiratory failure clinical assessment"],
+  ["neuro_recovery", "neuroplasticidade e recuperação", ["neuroplasticity", "motor_control_learning", "pain", "inflammation", "recovery_rehabilitation"], '("Neuronal Plasticity"[MeSH Terms] OR "Motor Skills"[MeSH Terms] OR "Pain"[MeSH Terms] OR "Inflammation"[MeSH Terms] OR "Rehabilitation"[MeSH Terms])'],
+  ["strength_fatigue_performance", "força, fadiga e performance", ["strength_power", "fatigue", "sports_performance"], '("Muscle Strength"[MeSH Terms] OR "Muscle Fatigue"[MeSH Terms] OR "Athletic Performance"[MeSH Terms])'],
+  ["autonomic_sleep_recovery", "HRV, sono e recuperação", ["autonomic_variability", "sleep_circadian", "recovery_rehabilitation"], '("Heart Rate Variability"[MeSH Terms] OR "Sleep"[MeSH Terms] OR "Recovery of Function"[MeSH Terms])'],
+  ["headache_vestibular", "cefaleia, vertigem e equilíbrio", ["headache_migraine", "vestibular_balance"], '("Headache"[MeSH Terms] OR "Migraine Disorders"[MeSH Terms] OR "Dizziness"[MeSH Terms] OR "Vertigo"[MeSH Terms] OR "Postural Balance"[MeSH Terms])'],
+  ["sepsis_respiratory", "sepse e respiração aguda", ["sepsis", "acute_respiratory_failure", "clinical_assessment"], '("Sepsis"[MeSH Terms] OR "Respiratory Insufficiency"[MeSH Terms] OR "Physical Examination"[MeSH Terms])'],
 ].map(([id, label, topicIds, query]) => ({ id, label, topicIds, query }));
 
 export const defaultLibraryTopic = defaultLibraryGroups.map((group) => group.query).join(" ");

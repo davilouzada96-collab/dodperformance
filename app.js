@@ -11,10 +11,10 @@ import {
   wordTranslations as centralWordTranslations,
 } from "./clinical-taxonomy.js";
 const OPENALEX_URL = "https://api.openalex.org/works";
-const PUBMED_BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils";
+const EUROPE_PMC_SEARCH_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest/search";
 const PROJECT_STORAGE_KEY = "dodResearchProjects";
 const SEARCH_CACHE_KEY = "dodResearchCache";
-const SEARCH_CACHE_VERSION = "v2";
+const SEARCH_CACHE_VERSION = "v3-pubmed-mesh";
 const SEARCH_CACHE_TTL_MS = 1000 * 60 * 60 * 12;
 const DEFAULT_LIBRARY_TOPIC = defaultLibraryTopic;
 const DEFAULT_LIBRARY_TOPICS = defaultLibraryGroups.map((group) => group.query);
@@ -214,14 +214,6 @@ function getDomain(url) {
 
 function stripHtml(text = "") {
   return text.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
-}
-
-function textFrom(node, selector) {
-  return node.querySelector(selector)?.textContent?.trim() || "";
-}
-
-function allTextFrom(node, selector) {
-  return [...node.querySelectorAll(selector)].map((item) => item.textContent.trim()).filter(Boolean);
 }
 
 function abstractFromInvertedIndex(index) {
@@ -624,46 +616,30 @@ function normalizeOpenAlexWork(work) {
   }), domainOverride: source.host_organization_name || source.display_name || "" });
 }
 
-function normalizePubMedArticle(article) {
-  const pmid = textFrom(article, "MedlineCitation > PMID");
-  const title = textFrom(article, "ArticleTitle") || "Título não identificado";
-  const journal = textFrom(article, "Journal > Title") || textFrom(article, "ISOAbbreviation") || null;
-  const year =
-    Number(textFrom(article, "JournalIssue PubDate Year")) ||
-    Number(textFrom(article, "ArticleDate Year")) ||
-    Number(textFrom(article, "DateCompleted Year")) ||
-    null;
-  const authorNames = [...article.querySelectorAll("AuthorList > Author")]
-    .slice(0, 8)
-    .map((author) => {
-      const collective = textFrom(author, "CollectiveName");
-      if (collective) return collective;
-      return [textFrom(author, "ForeName"), textFrom(author, "LastName")].filter(Boolean).join(" ");
-    })
+function normalizeEuropePmcResult(result) {
+  const pmid = String(result.pmid || "").replace(/\D/g, "");
+  const journal = result.journalInfo?.journal?.title || result.journalInfo?.journal?.medlineAbbreviation || null;
+  const meshTerms = (result.meshHeadingList?.meshHeading || [])
+    .map((heading) => heading.descriptorName)
     .filter(Boolean)
-    .join(", ");
-  const doi = [...article.querySelectorAll("ArticleId, ELocationID")]
-    .find((item) => (item.getAttribute("IdType") || item.getAttribute("EIdType")) === "doi")
-    ?.textContent?.trim();
-  const abstract = allTextFrom(article, "Abstract AbstractText").join(" ");
-  const publicationTypes = allTextFrom(article, "PublicationTypeList PublicationType");
-  const meshTerms = allTextFrom(article, "MeshHeading DescriptorName").slice(0, 8);
+    .slice(0, 12);
+  const publicationTypes = result.pubTypeList?.pubType || [];
 
   return enrichPaper({ ...createPaper({
     origin: "pubmed",
-    title,
-    authors: authorNames ? authorNames.split(", ") : [],
-    year,
+    title: result.title || "Título não identificado",
+    authors: (result.authorList?.author || []).slice(0, 8).map((author) => author.fullName).filter(Boolean),
+    year: Number(result.pubYear) || null,
     journal,
-    citations: null,
-    sourceUrl: pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}/` : doi ? `https://doi.org/${doi}` : null,
-    doi: doi ? `10.${doi.split("10.")[1] || doi}` : "",
+    citations: Number.isFinite(Number(result.citedByCount)) ? Number(result.citedByCount) : null,
+    sourceUrl: pmid ? `https://pubmed.ncbi.nlm.nih.gov/${pmid}/` : result.doi ? `https://doi.org/${result.doi}` : null,
+    doi: result.doi || "",
     pmid,
-    abstract,
-    source: "PubMed",
-    publisher: "NCBI",
-    evidenceType: titleCaseEvidence(publicationTypes.join(" "), title),
-    isOpenAccess: null,
+    abstract: stripHtml(result.abstractText || ""),
+    source: "PubMed / Europe PMC",
+    publisher: "NCBI / EMBL-EBI",
+    evidenceType: titleCaseEvidence(publicationTypes.join(" "), result.title || ""),
+    isOpenAccess: result.isOpenAccess === "Y",
     meshTerms,
   }), domainOverride: "PubMed" });
 }
@@ -756,7 +732,7 @@ function clearCardsForSearch() {
 }
 
 function setupEvents() {
-  els.researchForm.addEventListener("submit", (event) => {
+  els.researchForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const topic = els.topicInput.value.trim();
     if (!topic) {
@@ -764,11 +740,8 @@ function setupEvents() {
       return;
     }
     state.category = "all";
-    state.query = normalizeText(topic);
-    els.searchInput.value = topic;
     syncActiveLibraryChip("all");
-    render();
-    setStatus(`${getFilteredPapers().length} cards encontrados na biblioteca curada para "${topic}".`);
+    await searchScientific();
   });
 
   els.copyStrategyButton.addEventListener("click", () => copySearchStrategy());
@@ -852,31 +825,19 @@ async function fetchOpenAlex(topic, fromYear, limit) {
 }
 
 async function fetchPubMed(topic, fromYear, limit) {
+  const meshQuery = topic.replace(/"([^"]+)"\[MeSH Terms\]/g, 'MESH:"$1"');
+  const currentYear = new Date().getFullYear();
+  const query = `(${meshQuery}) AND FIRST_PDATE:[${fromYear}-01-01 TO ${currentYear}-12-31] AND SRC:MED`;
   const searchParams = new URLSearchParams({
-    db: "pubmed",
-    term: topic,
-    retmode: "json",
-    retmax: String(Math.min(limit, 200)),
-    mindate: String(fromYear),
-    datetype: "pdat",
-    sort: "relevance",
+    query,
+    format: "json",
+    resultType: "core",
+    pageSize: String(Math.min(limit, 100)),
   });
-  const searchResponse = await fetch(`${PUBMED_BASE_URL}/esearch.fcgi?${searchParams.toString()}`);
-  if (!searchResponse.ok) throw new Error(`PubMed search HTTP ${searchResponse.status}`);
-  const searchPayload = await searchResponse.json();
-  const ids = searchPayload.esearchresult?.idlist || [];
-  if (!ids.length) return [];
-
-  const fetchParams = new URLSearchParams({
-    db: "pubmed",
-    id: ids.join(","),
-    retmode: "xml",
-  });
-  const fetchResponse = await fetch(`${PUBMED_BASE_URL}/efetch.fcgi?${fetchParams.toString()}`);
-  if (!fetchResponse.ok) throw new Error(`PubMed fetch HTTP ${fetchResponse.status}`);
-  const xml = await fetchResponse.text();
-  const doc = new DOMParser().parseFromString(xml, "application/xml");
-  return [...doc.querySelectorAll("PubmedArticle")].map(normalizePubMedArticle);
+  const response = await fetch(`${EUROPE_PMC_SEARCH_URL}?${searchParams.toString()}`);
+  if (!response.ok) throw new Error(`Europe PMC HTTP ${response.status}`);
+  const payload = await response.json();
+  return (payload.resultList?.result || []).map(normalizeEuropePmcResult);
 }
 
 async function searchScientific(options = {}) {
@@ -905,8 +866,8 @@ async function searchScientific(options = {}) {
         libraryTopicIndex: topicIndex,
         libraryTopicLabel: isDefaultLibrary ? DEFAULT_LIBRARY_LABELS[topicIndex] || "" : "",
       }));
-      if (source === "openalex" || source === "both" || isDefaultLibrary) jobs.push(fetchOpenAlex(query, fromYear, perTopicLimit).then(tagTopic));
-      if (!isDefaultLibrary && (source === "pubmed" || source === "both")) jobs.push(fetchPubMed(query, fromYear, perTopicLimit).then(tagTopic));
+      if (source === "openalex" || source === "both") jobs.push(fetchOpenAlex(query, fromYear, perTopicLimit).then(tagTopic));
+      if (source === "pubmed" || source === "both" || isDefaultLibrary) jobs.push(fetchPubMed(query, fromYear, perTopicLimit).then(tagTopic));
     });
     const settled = await Promise.allSettled(jobs);
     let papers = settled.flatMap((result) => (result.status === "fulfilled" ? result.value : []));
@@ -1068,7 +1029,7 @@ function renderCard(paper) {
   visual.style.setProperty("--card-a", cardA);
   visual.style.setProperty("--card-b", cardB);
   code.textContent = cardCode(paper);
-  source.textContent = paper.origin === "curated" ? "DOD" : paper.source.includes("PubMed") ? "PUBMED" : "OPENALEX";
+  source.textContent = paper.origin === "curated" || paper.source.includes("PubMed") ? "PUBMED" : "OPENALEX";
   source.title = paper.domain;
   title.textContent = translatedTitle || paper.title;
   title.title = paper.title;
@@ -1078,7 +1039,7 @@ function renderCard(paper) {
     .filter(Boolean)
     .join(" • ");
   evidence.textContent = labelEvidence(paper.evidenceType);
-  oa.textContent = "DOD";
+  oa.textContent = paper.meshTerms?.length ? "MESH" : "PT-BR";
   oa.classList.toggle("is-oa", paper.isOpenAccess);
   link.href = href;
   link.setAttribute("aria-label", `Abrir fonte científica de ${translatedTitle || paper.title}`);
@@ -1475,6 +1436,11 @@ function downloadFile(filename, content, type) {
 async function boot() {
   setupEvents();
   loadDefaultLibrary();
+  await searchScientific({
+    fallbackTopic: DEFAULT_LIBRARY_TOPIC,
+    fallbackTopics: DEFAULT_LIBRARY_TOPICS,
+    publicLabel: "Biblioteca PubMed + MeSH",
+  });
 }
 
 boot();
