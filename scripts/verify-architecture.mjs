@@ -84,11 +84,16 @@ assert.equal(alertClinicalCase.status, "alert", "sinal clínico informado não g
 
 const clinicalHtml = readFileSync(resolve(root, "clinico/index.html"), "utf8");
 const clinicalApp = readFileSync(resolve(root, "clinico/app.js"), "utf8");
+const libraryHtml = readFileSync(resolve(root, "index.html"), "utf8");
+const libraryApp = readFileSync(resolve(root, "app.js"), "utf8");
 assert.ok(clinicalHtml.includes("Resultado estruturado"), "fluxo clínico estruturado ausente");
 assert.ok(!clinicalHtml.includes('class="cards-grid"'), "grade de cards ainda presente no Clínico");
 assert.ok(clinicalHtml.includes('<option value="pubmed" selected>PubMed</option>'), "Clínico não está fixado no PubMed");
 assert.ok(!clinicalApp.includes("output_data_1779051008"), "base local de machine learning ainda referenciada pelo Clínico");
 assert.ok(!/OpenAlex|openalex/.test(clinicalApp), "Clínico ainda contém integração OpenAlex");
+assert.ok(libraryHtml.includes('<option value="pubmed" selected>PubMed + MeSH</option>'), "biblioteca não prioriza PubMed + MeSH");
+assert.ok(libraryHtml.includes('<option value="100" selected>100</option>'), "biblioteca não oferece carga científica ampliada");
+assert.ok(libraryApp.includes("await searchScientific();"), "busca da biblioteca não consulta a base científica");
 
 const expectedEcgTopicIds = [
   "ecg_technical",
