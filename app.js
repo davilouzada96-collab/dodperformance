@@ -1,5 +1,5 @@
-import { researchCards as scientificLibraryCards } from "./scientific-library-data.js";
-import { createPaper, paperAuthorsText, paperSourceUrl } from "./paper-contract.js";
+import { researchCards as scientificLibraryCards } from "./scientific-library-data.js?v=20260730-2108-pubmed-mesh";
+import { createPaper, paperAuthorsText, paperSourceUrl } from "./paper-contract.js?v=20260730-2108-pubmed-mesh";
 import {
   classifyClinicalTopicIds,
   clinicalTopicsById,
@@ -9,7 +9,7 @@ import {
   phraseTranslations as centralPhraseTranslations,
   ptBrSearchTerms as centralPtBrSearchTerms,
   wordTranslations as centralWordTranslations,
-} from "./clinical-taxonomy.js";
+} from "./clinical-taxonomy.js?v=20260730-2108-pubmed-mesh";
 const OPENALEX_URL = "https://api.openalex.org/works";
 const EUROPE_PMC_SEARCH_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest/search";
 const PROJECT_STORAGE_KEY = "dodResearchProjects";
