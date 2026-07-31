@@ -14,11 +14,51 @@ const OPENALEX_URL = "https://api.openalex.org/works";
 const EUROPE_PMC_SEARCH_URL = "https://www.ebi.ac.uk/europepmc/webservices/rest/search";
 const PROJECT_STORAGE_KEY = "dodResearchProjects";
 const SEARCH_CACHE_KEY = "dodResearchCache";
-const SEARCH_CACHE_VERSION = "v3-pubmed-mesh";
+const SEARCH_CACHE_VERSION = "v4-scientific-sections";
 const SEARCH_CACHE_TTL_MS = 1000 * 60 * 60 * 12;
 const DEFAULT_LIBRARY_TOPIC = defaultLibraryTopic;
 const DEFAULT_LIBRARY_TOPICS = defaultLibraryGroups.map((group) => group.query);
 const DEFAULT_LIBRARY_LABELS = defaultLibraryGroups.map((group) => group.label);
+const LIBRARY_CATEGORIES = [
+  {
+    id: "neuro",
+    label: "Neuro",
+    description: "Neuroplasticidade, controle motor, dor, cognição e sistema vestibular.",
+    topicIds: new Set([
+      "neuroplasticity", "motor_control_learning", "action_potential", "executive_function",
+      "reaction_time", "headache_migraine", "vestibular_balance", "proprioception_balance",
+      "pain", "stroke",
+    ]),
+  },
+  {
+    id: "physio",
+    label: "Physio",
+    description: "Fisiologia clínica, avaliação, reabilitação e função cardiorrespiratória.",
+    topicIds: new Set([
+      "critical_care", "acute_lung_injury", "acute_respiratory_failure", "sepsis",
+      "clinical_assessment", "diagnosis", "cardiovascular", "ecg", "asthma",
+      "diabetes", "recovery_rehabilitation",
+    ]),
+  },
+  {
+    id: "sport",
+    label: "Sport",
+    description: "Força, potência, fadiga, carga, lesão e desempenho esportivo.",
+    topicIds: new Set([
+      "strength_power", "load_adaptation", "muscle_tendon_injury", "fatigue",
+      "sports_performance", "aerobic_capacity", "nutrition",
+    ]),
+  },
+  {
+    id: "health",
+    label: "Homeostase",
+    description: "Sono, HRV, estresse, inflamação e regulação sistêmica.",
+    topicIds: new Set([
+      "autonomic_variability", "sleep_circadian", "homeostasis", "stress_cortisol",
+      "inflammation", "breathing",
+    ]),
+  },
+];
 
 const noisyDomains = [
   "researchgate.net",
@@ -536,6 +576,34 @@ function scorePaper(paper) {
   return Math.round(citationScore + evidenceScore + yearScore + sourceScore + accessScore + idScore + pubmedScore);
 }
 
+function inferPrimaryLibraryCategory(paper) {
+  if (paper.libraryCategory && LIBRARY_CATEGORIES.some(({ id }) => id === paper.libraryCategory)) {
+    return paper.libraryCategory;
+  }
+
+  const topicIds = new Set(paper.clinicalTopicIds || []);
+  const text = normalizeText([
+    paper.libraryTopicLabel,
+    paper.title,
+    paper.abstract,
+    ...(paper.meshTerms || []),
+  ].filter(Boolean).join(" "));
+  const keywordScores = {
+    neuro: /neuro|brain|cerebr|motor|vestib|vertig|migraine|headache|propriocep|cognit|stroke|pain/g,
+    physio: /physiol|clinical|rehabil|respirat|pulmon|cardi|sepsis|diagnos|assessment|diabetes|asthma/g,
+    sport: /sport|athlet|exercise|training|strength|power|fatigue|muscle|tendon|vo2|aerobic/g,
+    health: /homeosta|allosta|sleep|circadian|autonomic|heart rate variability|hrv|stress|cortisol|inflamm|recovery/g,
+  };
+
+  const ranked = LIBRARY_CATEGORIES.map((category, index) => {
+    const topicScore = [...topicIds].filter((id) => category.topicIds.has(id)).length * 5;
+    const keywordScore = (text.match(keywordScores[category.id]) || []).length;
+    return { id: category.id, score: topicScore + keywordScore, index };
+  }).sort((a, b) => b.score - a.score || a.index - b.index);
+
+  return ranked[0].score > 0 ? ranked[0].id : "physio";
+}
+
 function enrichPaper(paper) {
   const domain = paper.domainOverride || getDomain(paper.sourceUrl);
   const sourceText = `${domain} ${paper.journal || ""} ${paper.publisher || ""}`.toLowerCase();
@@ -553,6 +621,7 @@ function enrichPaper(paper) {
       preferredDomains.some((item) => sourceText.includes(item)) ||
       preferredSourceNames.some((item) => sourceText.includes(item)),
   };
+  normalized.libraryCategory = inferPrimaryLibraryCategory(normalized);
   normalized.score = scorePaper(normalized);
   return normalized;
 }
@@ -1101,7 +1170,30 @@ function render() {
   if (state.synthesis) renderSynthesis();
   els.cards.innerHTML = "";
   const fragment = document.createDocumentFragment();
-  filtered.forEach((paper) => fragment.append(renderCard(paper)));
+  LIBRARY_CATEGORIES.forEach((category) => {
+    const papers = filtered.filter((paper) => paper.libraryCategory === category.id);
+    if (!papers.length) return;
+
+    const section = document.createElement("section");
+    section.className = "library-category";
+    section.dataset.category = category.id;
+
+    const header = document.createElement("header");
+    header.className = "library-category-head";
+    const heading = document.createElement("h2");
+    heading.textContent = category.label;
+    const count = document.createElement("span");
+    count.textContent = `${papers.length} ${papers.length === 1 ? "artigo" : "artigos"}`;
+    const description = document.createElement("p");
+    description.textContent = category.description;
+    header.append(heading, count, description);
+
+    const grid = document.createElement("div");
+    grid.className = "cards-grid";
+    papers.forEach((paper) => grid.append(renderCard(paper)));
+    section.append(header, grid);
+    fragment.append(section);
+  });
   els.cards.append(fragment);
   els.emptyState.hidden = filtered.length > 0;
 }
