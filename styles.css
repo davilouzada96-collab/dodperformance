@@ -351,38 +351,149 @@ select:focus {
 
 .card-visual {
   position: relative;
-  display: grid;
-  place-items: center;
-  min-height: 114px;
+  display: flex;
+  min-height: 128px;
+  padding: 14px;
+  flex-direction: column;
+  justify-content: space-between;
   margin-bottom: 14px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
   background:
-    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.22), transparent 22%),
-    linear-gradient(135deg, var(--card-a, #4b3b88), var(--card-b, #08101a));
-  box-shadow: inset 0 -24px 38px rgba(0, 0, 0, 0.14);
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    radial-gradient(circle at 82% 12%, color-mix(in srgb, var(--card-a, #315f7b) 44%, transparent), transparent 38%),
+    linear-gradient(145deg, color-mix(in srgb, var(--card-a, #315f7b) 48%, #0a111a), var(--card-b, #08101a));
+  background-size: 22px 22px, 22px 22px, auto, auto;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -30px 54px rgba(0, 0, 0, 0.2);
+}
+
+.card-visual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-left: 2px solid color-mix(in srgb, var(--card-a, #6fb7ff) 82%, #ffffff);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.82;
 }
 
 .card-visual::after {
   content: "";
   position: absolute;
-  inset: auto -12% -62% 26%;
-  height: 92%;
+  width: 96px;
+  height: 96px;
+  right: -46px;
+  bottom: -54px;
+  border: 1px solid color-mix(in srgb, var(--card-a, #6fb7ff) 52%, transparent);
   border-radius: 50%;
-  background: rgba(111, 183, 255, 0.09);
-  filter: blur(20px);
+  box-shadow: 0 0 0 15px rgba(255, 255, 255, 0.018), 0 0 0 32px rgba(255, 255, 255, 0.012);
+}
+
+.card-visual-topline,
+.card-visual-brand,
+.card-visual-center {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+}
+
+.card-visual-topline {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-visual-brand {
+  gap: 7px;
+}
+
+.card-visual-mark {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 7px;
+  color: #dceeff;
+  background: rgba(3, 8, 14, 0.32);
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.card-visual-brand > span:last-child {
+  display: grid;
+  gap: 1px;
+}
+
+.card-visual-brand strong {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 0.68rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+}
+
+.card-visual-brand small,
+.card-visual-category,
+.card-visual-meta {
+  color: rgba(222, 235, 249, 0.66);
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.card-visual-category {
+  padding: 5px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(3, 8, 14, 0.24);
+}
+
+.library-category[data-category="neuro"] .card-visual-category::before {
+  content: "Neuro";
+}
+
+.library-category[data-category="physio"] .card-visual-category::before {
+  content: "Physio";
+}
+
+.library-category[data-category="sport"] .card-visual-category::before {
+  content: "Sport";
+}
+
+.library-category[data-category="health"] .card-visual-category::before {
+  content: "Homeostase";
+}
+
+.card-visual-center {
+  gap: 10px;
 }
 
 .card-code {
   position: relative;
   z-index: 1;
   color: #ffffff;
-  font-size: clamp(2rem, 3.5vw, 2.85rem);
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
   line-height: 1;
-  font-weight: 950;
-  letter-spacing: -0.025em;
-  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+  font-weight: 850;
+  letter-spacing: -0.015em;
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.24);
+}
+
+.card-visual-rule {
+  width: 42px;
+  height: 1px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--card-a, #6fb7ff) 85%, #ffffff), transparent);
+}
+
+.card-visual-meta {
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.1em;
 }
 
 .tag-row,
@@ -741,7 +852,7 @@ select:focus {
   }
 
   .card-visual {
-    min-height: 104px;
+    min-height: 120px;
   }
 
   .reader-modal {
